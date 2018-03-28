@@ -1,0 +1,75 @@
+﻿@model IEnumerable<TrustTeamVersion4.Models.Domain.Home>
+@{
+	ViewData["Title"] = "Home";
+}
+<h2>@ViewData["Title"]</h2>
+@*<p>
+	<a asp-controller="Home" asp-action="Index">Add a brewer</a>
+</p>*@
+<div class="form-group">
+	<label> Ticket Number </label>
+	<select asp-items="@(ViewData["TicketNumbers"] as SelectList)" class="form-control">
+		<option value=""> --- Selecteer Ticket Nummer ---</option>
+	</select>
+	<label> Year </label>
+	<select asp-items="@(ViewData["Years"] as SelectList)" class="form-control">
+		<option value=""> --- Selecteer jaar ---</option>
+	</select>
+
+	<label> Organization Number </label>
+	<select asp-items="@(ViewData["OrganizationNumbers"] as SelectList)" class="form-control">
+		<option value=""> --- Selecteer Organisatie nummer ---</option>
+	</select>
+	<label> Organization name </label>
+<select asp-items="@(ViewData["InvoiceOrg"] as SelectList)" class="form-control">
+	<option value=""> --- Selecteer Naam Organisatie ---</option>
+</select>
+	<label> Group name </label>
+	<select asp-items="@(ViewData["GroupNames"] as SelectList)" class="form-control">
+		<option value=""> --- Selecteer Naam Groep ---</option>
+	</select>
+	<label> Person Names </label>
+	<select asp-items="@(ViewData["PersonNames"] as SelectList)" class="form-control">
+		<option value=""> --- Selecteer Persoon Naam ---</option>
+	</select>
+	<label> Support call types </label>
+	<select asp-items="@(ViewData["SupportCallTypes"] as SelectList)" class="form-control">
+		<option value=""> --- Selecteer Support Call Type ---</option>
+	</select>
+	<label> Support call Priorities </label>
+	<select asp-items="@(ViewData["SupportCallPriorities"] as SelectList)" class="form-control">
+		<option value=""> --- Selecteer Support Call Priority ---</option>
+	</select>
+	<label> Support call Impacts </label>
+	<select asp-items="@(ViewData["SupportCallImpacts"] as SelectList)" class="form-control">
+		<option value=""> --- Selecteer Support Call Impacts ---</option>
+	</select>
+	<label> Support call Urgencies </label>
+	<select asp-items="@(ViewData["SupportCallUrgencies"] as SelectList)" class="form-control">
+		<option value=""> --- Selecteer Support Call Urgencies ---</option>
+	</select>
+	<label> Support call statusses </label>
+	<select asp-items="@(ViewData["SupportCallstatusses"] as SelectList)" class="form-control">
+		<option value=""> --- Selecteer Support Call status ---</option>
+	</select>
+	<label> Opened by users </label>
+	<select asp-items="@(ViewData["OpenedByUsers"] as SelectList)" class="form-control">
+		<option value=""> --- Selecteer User ---</option>
+	</select>
+	<label> Assigned tp users </label>
+	<select asp-items="@(ViewData["AssignedToUsers"] as SelectList)" class="form-control">
+		<option value=""> --- Selecteer User ---</option>
+	</select>
+	<label> Assigned tp Queus </label>
+	<select asp-items="@(ViewData["AssignedToQueus"] as SelectList)" class="form-control">
+		<option value=""> --- Selecteer queue ---</option>
+	</select>
+	<label> Invoice Statusses</label>
+	<select asp-items="@(ViewData["InvoiceStatusses"] as SelectList)" class="form-control">
+		<option value=""> --- Selecteer Invoice Status ---</option>
+	</select>
+	
+</div>
+<div> 
+	<a asp-controller="Home" asp-action="Table" @*asp-route-id="@item.Number"*@>Filter</a>
+</div>
