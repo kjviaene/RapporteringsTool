@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TrustTeamVersion4.Models;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System;
 
 namespace TrustTeamVersion4.Data.Repositories
 {
@@ -11,26 +12,30 @@ namespace TrustTeamVersion4.Data.Repositories
 	{
 		private readonly ApplicationDbContext _dbContext;
 		private readonly DbSet<Home> _homes;
+		public IEnumerable<Home> HomesFiltered;
+
+		public void SetHomesFiltered(IEnumerable<Home> input)
+		{
+			this.HomesFiltered = input;
+		}
 
 
 		public HomeRepository(ApplicationDbContext dbContext)
 		{
 			_dbContext = dbContext;
 			_homes = dbContext.homes;
+			foreach (var home in _homes)
+			{
+				home.SetDateNotNull();
+			}
 		}
-
-		public IEnumerable<Home> GetBy(double number)
-		{
-			return _homes.Where(b => b.Number == number);
-		}
-
+		// Returnen van alle objecten in de databank in lijst formaat
 		public IEnumerable<Home> GetAll()
 		{
-			// return _homes.Include(b => b.InvoiceStatus).Include(b => b.Beers).ToList();
 			return _homes.ToList();
 		}
 
-
+		// Return alle unieke nummers die in de databank zitten
 		public List<double?> GetNumbers()
 		{
 			List<double?> numbers = new List<double?>();
@@ -44,6 +49,7 @@ namespace TrustTeamVersion4.Data.Repositories
 			numbers.Sort();
 			return numbers;
 		}
+		// Return alle unieke jaartallen die in de databank zitten
 		public List<double?> GetYear()
 		{
 			List<double?> years = new List<double?>();
@@ -57,6 +63,7 @@ namespace TrustTeamVersion4.Data.Repositories
 			years.Sort();
 			return years;
 		}
+		// Return alle unieke Organisatie nummers die in de databank zitten
 		public List<string> GetOrganizationNumbers()
 		{
 			List<string> ONumbers = new List<string>();
@@ -70,6 +77,7 @@ namespace TrustTeamVersion4.Data.Repositories
 			ONumbers.Sort();
 			return ONumbers;
 		}
+		// Return alle unieke Organisatie namen die in de databank zitten
 		public List<string> getInvoiceCenterOrganizations()
 		{
 			List<string> InvoiceOrg = new List<string>();
@@ -83,6 +91,7 @@ namespace TrustTeamVersion4.Data.Repositories
 			InvoiceOrg.Sort();
 			return InvoiceOrg;
 		}
+		// Return alle unieke groep namen die in de databank zitten
 		public List<string> getGroupNames()
 		{
 			List<string> groups = new List<string>();
@@ -96,6 +105,7 @@ namespace TrustTeamVersion4.Data.Repositories
 			groups.Sort();
 			return groups;
 		}
+		// Return alle unieke persoons namen die in de databank zitten
 		public List<string> getPersonNames()
 		{
 			List<string> names = new List<string>();
@@ -109,6 +119,7 @@ namespace TrustTeamVersion4.Data.Repositories
 			names.Sort();
 			return names;
 		}
+		// Return alle unieke call types  die in de databank zitten
 		public List<string> getSupportCallTypes()
 		{
 			List<string> types = new List<string>();
@@ -122,6 +133,7 @@ namespace TrustTeamVersion4.Data.Repositories
 			types.Sort();
 			return types;
 		}
+		// Return alle unieke call prioriteiten  die in de databank zitten
 		public List<string> getSupportCallPriorities()
 		{
 			List<string> priorities = new List<string>();
@@ -135,6 +147,7 @@ namespace TrustTeamVersion4.Data.Repositories
 			priorities.Sort();
 			return priorities;
 		}
+		// Return alle unieke support call impacten die in de databank zitten
 		public List<string> getSupportCallImpacts()
 		{
 			List<string> impacts = new List<string>();
@@ -148,6 +161,7 @@ namespace TrustTeamVersion4.Data.Repositories
 			impacts.Sort();
 			return impacts;
 		}
+		// Return alle unieke urgenties die in de databank zitten
 		public List<string> getSupportCallUrgencies()
 		{
 			List<string> urgencies = new List<string>();
@@ -161,6 +175,7 @@ namespace TrustTeamVersion4.Data.Repositories
 			urgencies.Sort();
 			return urgencies;
 		}
+		// Return alle unieke statussen die in de databank zitten
 		public List<string> getSupportCallStatusses()
 		{
 			List<string> statusses = new List<string>();
@@ -174,6 +189,7 @@ namespace TrustTeamVersion4.Data.Repositories
 			statusses.Sort();
 			return statusses;
 		}
+		// Return alle unieke call categoriën die in de databank zitten
 		public List<string> getSupportCallCategories()
 		{
 			List<string> categories = new List<string>();
@@ -187,6 +203,7 @@ namespace TrustTeamVersion4.Data.Repositories
 			categories.Sort();
 			return categories;
 		}
+		// Return alle unieke users die een ticket openden die in de databank zitten
 		public List<string> getOpenedByUsers()
 		{
 			List<string> users = new List<string>();
@@ -200,6 +217,7 @@ namespace TrustTeamVersion4.Data.Repositories
 			users.Sort();
 			return users;
 		}
+		// Return alle unieke users die een ticker werden toegewezen die in de databank zitten
 		public List<string> getAssignedtoUsers()
 		{
 			List<string> users = new List<string>();
@@ -213,6 +231,7 @@ namespace TrustTeamVersion4.Data.Repositories
 			users.Sort();
 			return users;
 		}
+		// Return alle unieke queus die in de databank zitten
 		public List<string> getAssignedToQueus()
 		{
 			List<string> queus = new List<string>();
@@ -226,6 +245,7 @@ namespace TrustTeamVersion4.Data.Repositories
 			queus.Sort();
 			return queus;
 		}
+		// Return alle unieke Statussen die in de databank zitten
 		public List<string> getInvoiceStatusses()
 		{
 			List<string> statusses = new List<string>();
@@ -239,61 +259,81 @@ namespace TrustTeamVersion4.Data.Repositories
 			statusses.Sort();
 			return statusses;
 		}
+		// Filter de data op basis van een Home opbject dat werd meegegeven, als een property null is zal deze ook steeds toegevoegd worden.
 		public List<Home> Filter(Home home)
 		{
-			List<Home> filteredHomes = null;
-			foreach (Home h in _homes)
+			List<Home> filteredHomes = new List<Home>();
+			// als er geen geldig home object werd meegegeven wordt de if statement niet uitgevoerd en zal de volledige databank worden teruggeven,
+			// niet gefilterd
+			if (home != null)
 			{
-				if (!(home.Month.HasValue) | home.Month.Equals(h.Month))
+				foreach (Home h in _homes)
 				{
-					if (!(home.Number.HasValue) | home.Number.Equals(h.Number))
+					if (!(home.Month.HasValue) | home.Month.Equals(h.Month))
 					{
-						if (!(home.Year.HasValue) | home.Year.Equals(h.Year))
+						if (!(home.Number.HasValue) | home.Number.Equals(h.Number))
 						{
-							if (string.IsNullOrEmpty(home.OrganizationNumber) | home.OrganizationNumber.Equals(h.OrganizationNumber))
+							if (!(home.Year.HasValue) | home.Year.Equals(h.Year))
 							{
-								if (string.IsNullOrEmpty(home.GroupName) | home.GroupName.Equals(h.GroupName))
+								if (home.OrganizationNumber == null | home.OrganizationNumber == h.OrganizationNumber)
 								{
-									if (string.IsNullOrEmpty(home.PersonName) | home.PersonName.Equals(h.PersonName))
+									if (home.InvoicCenterOrganization == null | home.InvoicCenterOrganization == h.InvoicCenterOrganization)
 									{
-										if (string.IsNullOrEmpty(home.SupportCallType) | home.SupportCallType.Equals(h.SupportCallType))
+										if (home.GroupName == null | home.GroupName == h.GroupName)
 										{
-											if (string.IsNullOrEmpty(home.SupportCallPriority) | home.SupportCallPriority.Equals(h.SupportCallPriority))
+											if (home.PersonName == null | home.PersonName == h.PersonName)
 											{
-												if (string.IsNullOrEmpty(home.SupportCallImpact) | home.SupportCallImpact.Equals(h.SupportCallImpact))
+												if (home.SupportCallType == null | home.SupportCallType == h.SupportCallType)
 												{
-													if (string.IsNullOrEmpty(home.SupportCallUrgency) | home.SupportCallUrgency.Equals(h.SupportCallUrgency))
+													if (home.SupportCallPriority == null | home.SupportCallPriority == h.SupportCallPriority)
 													{
-														if (string.IsNullOrEmpty(home.SupportCallStatus) | home.SupportCallStatus.Equals(h.SupportCallStatus))
+														if (home.SupportCallImpact == null | home.SupportCallImpact == h.SupportCallImpact)
 														{
-															if (string.IsNullOrEmpty(home.OpenedByUser) | home.OpenedByUser.Equals(h.OpenedByUser))
+															if (home.SupportCallUrgency == null | home.SupportCallUrgency == h.SupportCallUrgency)
 															{
-																if (string.IsNullOrEmpty(home.AssignedToUser) | home.AssignedToUser.Equals(h.AssignedToUser))
+																if (home.SupportCallStatus == null | home.SupportCallStatus == h.SupportCallStatus)
 																{
-																	if (string.IsNullOrEmpty(home.AssignedToQueue) | home.AssignedToQueue.Equals(h.AssignedToQueue))
+																	if (home.OpenedByUser == null | home.OpenedByUser == h.OpenedByUser)
 																	{
-																		if (string.IsNullOrEmpty(home.InvoiceStatus) | home.InvoiceStatus.Equals(h.InvoiceStatus))
+																		if (home.AssignedToUser == null | home.AssignedToUser == h.AssignedToUser)
 																		{
-																			filteredHomes.Add(h);
+																			if (home.AssignedToQueue == null | home.AssignedToQueue == h.AssignedToQueue)
+																			{
+																				if (home.InvoiceStatus == null | home.InvoiceStatus == h.InvoiceStatus)
+																				{
+																					if (home.SupportCallOpenDate == DateTime.MinValue | home.SupportCallOpenDate <= h.SupportCallOpenDate)
+																					{
+																						if (home.SupportCallOpenDateEinde == DateTime.MinValue | home.SupportCallOpenDateEinde >= h.SupportCallOpenDate)
+																						{
+																							filteredHomes.Add(h);
+																						}
+																						
+																					}
+
+																				}
+																			}
 																		}
 																	}
 																}
+
 															}
 														}
-
 													}
 												}
 											}
 										}
 									}
 								}
+
 							}
 						}
-					}
 
+					}
 				}
 			}
-			if (!(filteredHomes == null) | filteredHomes.Any())
+			// Indien er één of meer objecten voldeden aan de waarden worden deze geretourneerd. Anders zal de volledige lijst worden
+			// teruggegeven
+			if (!(filteredHomes == null))
 			{
 				return filteredHomes;
 			}
@@ -301,6 +341,33 @@ namespace TrustTeamVersion4.Data.Repositories
 			{
 				return _homes.ToList();
 			}
+		}
+
+		public string[,] GetEfficiency(IEnumerable<Home> homes)
+		{
+			int counter = 0;
+			int amount;
+			IEnumerable<string> statusses = this.getSupportCallStatusses();
+			string[,] result = new string[statusses.Count(), 2];
+			foreach (var status in statusses)
+			{
+				amount = 0;
+				foreach (var home in homes)
+				{
+					if(home.SupportCallStatus == status)
+					{
+						amount = amount + 1;
+					}
+				}
+				if (amount > 0)
+				{
+					result[counter, 0] = status;
+					result[counter, 1] = amount.ToString();
+					counter = counter + 1;
+				}
+			}
+
+			return result;
 		}
 	}
 }

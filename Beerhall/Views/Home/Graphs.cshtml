@@ -1,0 +1,52 @@
+﻿@model IEnumerable<TrustTeamVersion4.Models.Domain.Home>
+@{
+	ViewData["Title"] = "Graphs";
+	Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+<h2>Graphs</h2>
+<div id="chartContainer"></div>
+@{
+	string[,] temp = (string[,])ViewData["Data"];
+	string[] xas = new string[temp.Length/2];
+	double[] yas = new double[temp.Length/2];
+	for (var i = 0; i < temp.Length / 2; i++)
+	{
+		if (!(temp[i, 0] == null ))
+		{
+			xas[i] = temp[i, 0];
+			yas[i] = Int32.Parse(temp[i, 1]);
+		}
+	}
+
+
+}
+<script type="text/javascript">
+
+	window.onload = function () {
+		var chart = new CanvasJS.Chart("chartContainer", {
+			theme: "theme2",
+			animationEnabled: true,
+			title: {
+				text: "Aantal tickets per status"
+			},
+			subtitles: [
+			// Maak hier nog het bedrijf van waarop gefilterd werd via ViewBag/ViewData, zelfde manier van werken als bij filter tekst bovenaan
+				{ text: "@ViewData["Bedrijf"]" }
+			],
+			data: [
+				{
+					type: "column", //change type to bar, line, area, pie, etc
+					dataPoints: [
+						{y: @yas[0], label: "@xas[0]" },
+						{y: @yas[1], label: "@xas[1]" },
+						{y: @yas[2], label: "@xas[2]" }
+					]
+				}
+			]
+		});
+		chart.render();
+	};
+</script>
+
+

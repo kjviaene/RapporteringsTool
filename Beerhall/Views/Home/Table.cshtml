@@ -1,33 +1,343 @@
 ﻿@model IEnumerable<TrustTeamVersion4.Models.Domain.Home>
 @{
-    ViewData["Title"] = "Table";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+	ViewData["Title"] = "Table";
+	Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h2>Table</h2>
+<h2>Gefilterd op : </h2>
+<!-- Het tonen van de variabelen waarop gefilterd werd -->
+<h3>@ViewBag.filter</h3>
+<!-- Nodig voor het verbergen van kolommen -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
 <table class="table table-striped table-condensed table-bordered">
 	<tr>
-		<th>Number</th>
-		<th>Organization name</th>
-		<th>Organization number</th>
-		<th class="text-right">Opened by user</th>
-		<th class="text-right">Open date</th>
-		<th></th>
+		<!-- - De klasse tbh_*_hide is voor de mogelijkheid tot het verbergen van elke kolom
+			 - De klasse btn-table is voor de knop die dient om een kolom te verbergen. Deze krijgt wat andere css omdat
+			   de standaard css niet gepast was in deze context.
+			 - Het id btnHide* is telkens voor het verbergen van de kolom waarin de button zich bevind
+			 - De Actionlinks dienen voor het sorteren van deze kolom. Dit roept terug de Table methode op uit de controller en geeft
+			   als parameter een nieuwe instatie terug van de correcte viewBag-->
+		<th>N°</th>
+		<th class="tbh_1_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide1"><b>X</b></button>@Html.ActionLink("Number", "Table", new { sortOrder = ViewBag.Number })</th>
+		<th class="tbh_2_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide2"><b>X</b></button>@Html.ActionLink("Month", "Table", new { sortOrder = ViewBag.Month })</th>
+		<th class="tbh_3_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide3"><b>X</b></button>@Html.ActionLink("Year", "Table", new { sortOrder = ViewBag.Year })</th>
+		<th class="tbh_4_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide4"><b>X</b></button>@Html.ActionLink("OrganizationNumber", "Table", new { sortOrder = ViewBag.OrganizationNumber })</th>
+		<th class="tbh_5_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide5"><b>X</b></button>@Html.ActionLink("InvoicCenterOrganization", "Table", new { sortOrder = ViewBag.InvoicCenterOrganization })</th>
+		<th class="tbh_6_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide6"><b>X</b></button>@Html.ActionLink("GroupName", "Table", new { sortOrder = ViewBag.GroupName })</th>
+		<th class="tbh_7_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide7"><b>X</b></button>@Html.ActionLink("PersonName", "Table", new { sortOrder = ViewBag.PersonName })</th>
+		<th class="tbh_8_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide8"><b>X</b></button>@Html.ActionLink("SupportCallType", "Table", new { sortOrder = ViewBag.SupportCallType })</th>
+		<th class="tbh_9_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide9"><b>X</b></button>@Html.ActionLink("SupportCallPriority", "Table", new { sortOrder = ViewBag.SupportCallPriority })</th>
+		<th class="tbh_10_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide10"><b>X</b></button>@Html.ActionLink("SupportCallImpact", "Table", new { sortOrder = ViewBag.SupportCallImpact })</th>
+		<th class="tbh_11_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide11"><b>X</b></button>@Html.ActionLink("SupportCallUrgency", "Table", new { sortOrder = ViewBag.SupportCallUrgency })</th>
+		<th class="tbh_12_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide12"><b>X</b></button>@Html.ActionLink("SupportCallStatus", "Table", new { sortOrder = ViewBag.SupportCallStatus })</th>
+		<th class="tbh_13_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide13"><b>X</b></button>@Html.ActionLink("SupportCallCategory", "Table", new { sortOrder = ViewBag.SupportCallCategory })</th>
+		<th class="tbh_14_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide14"><b>X</b></button>@Html.ActionLink("SupportCallOpenDate", "Table", new { sortOrder = ViewBag.SupportCallOpenDate })</th>
+		<th class="tbh_15_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide15"><b>X</b></button>@Html.ActionLink("SupportCallOpenTime", "Table", new { sortOrder = ViewBag.SupportCallOpenTime })</th>
+		<th class="tbh_16_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide16"><b>X</b></button>@Html.ActionLink("SupportCallClosedDate", "Table", new { sortOrder = ViewBag.SupportCallClosedDate })</th>
+		<th class="tbh_17_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide17"><b>X</b></button>@Html.ActionLink("SupportCallClosedTime", "Table", new { sortOrder = ViewBag.SupportCallClosedTime })</th>
+		<th class="tbh_18_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide18"><b>X</b></button>@Html.ActionLink("HoursTillClosed", "Table", new { sortOrder = ViewBag.HoursTillClosed })</th>
+		<th class="tbh_19_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide19"><b>X</b></button>@Html.ActionLink("HoursInStatusOpen", "Table", new { sortOrder = ViewBag.HoursInStatusOpen })</th>
+		<th class="tbh_20_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide20"><b>X</b></button>@Html.ActionLink("HoursInvoiceCenter", "Table", new { sortOrder = ViewBag.HoursInvoiceCenter })</th>
+		<th class="tbh_21_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide21"><b>X</b></button>@Html.ActionLink("InvoiceCallSummary", "Table", new { sortOrder = ViewBag.InvoiceCallSummary })</th>
+		<th class="tbh_22_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide22"><b>X</b></button>@Html.ActionLink("OpenedByUser", "Table", new { sortOrder = ViewBag.OpenedByUser })</th>
+		<th class="tbh_23_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide23"><b>X</b></button>@Html.ActionLink("AssignedToUser", "Table", new { sortOrder = ViewBag.AssignedToUser })</th>
+		<th class="tbh_24_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide24"><b>X</b></button>@Html.ActionLink("AssignedToQueue", "Table", new { sortOrder = ViewBag.AssignedToQueue })</th>
+		<th class="tbh_25_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide25"><b>X</b></button>@Html.ActionLink("FirstEventSummary", "Table", new { sortOrder = ViewBag.FirstEventSummary })</th>
+		<th class="tbh_26_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide26"><b>X</b></button>@Html.ActionLink("ClienteleSupportCallSummary", "Table", new { sortOrder = ViewBag.ClienteleSupportCallSummary })</th>
+		<th class="tbh_27_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide27"><b>X</b></button>@Html.ActionLink("InvoiceOrganizationName", "Table", new { sortOrder = ViewBag.InvoiceOrganizationName })</th>
+		<th class="tbh_28_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide28"><b>X</b></button>@Html.ActionLink("InvoiceOrganizationNumber", "Table", new { sortOrder = ViewBag.InvoiceOrganizationNumber })</th>
+		<th class="tbh_29_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide29"><b>X</b></button>@Html.ActionLink("InvoiceStatus", "Table", new { sortOrder = ViewBag.InvoiceStatus })</th>
+		<th class="tbh_30_hide"><button class="btn  btn-xs btn-info btn-table" id="btnHide30"><b>X</b></button>@Html.ActionLink("HoursClienteleWorkedOnSupportCall", "Table", new { sortOrder = ViewBag.HoursClienteleWorkedOnSupportCall })</th>
 	</tr>
-	@foreach (var item in Model)
-	{
+	<!-- Het overlopen van alle Home objecten die werden meegeven in het model en het printen hiervan in de tabel-->
+	@{ int counter = 1;
+		foreach (var item in Model)
+		{
 		<tr>
-			<td>@item.Number</td>
-			<td>@item.InvoiceOrganizationName</td>
-			<td>@item.OrganizationNumber</td>
-			<td class="text-right">@(item.OpenedByUser)</td>
-			<td class="text-right">@(item.SupportCallOpenDate)</td>
-			@*<td>
-					<a asp-controller="Home" asp-action="Index" asp-route-id="@item.Number">Detail</a> |
-					<a asp-controller="Home" asp-action="Index" asp-route-id="@item.Number">Edit</a> |
-					<a asp-controller="Home" asp-action="Index" asp-route-id="@item.Number">Delete</a>
-				</td>*@
+			<td>@counter</td>
+			<td class="tbh_1_hide">@item.Number</td>
+			<td class="tbh_2_hide">@item.Month</td>
+			<td class="tbh_3_hide">@item.Year</td>
+			<td class="tbh_4_hide">@item.OrganizationNumber</td>
+			<td class="tbh_5_hide">@item.InvoicCenterOrganization</td>
+			<td class="tbh_6_hide">@item.GroupName</td>
+			<td class="tbh_7_hide">@item.PersonName</td>
+			<td class="tbh_8_hide">@item.SupportCallType</td>
+			<td class="tbh_9_hide">@item.SupportCallPriority</td>
+			<td class="tbh_10_hide">@item.SupportCallImpact</td>
+			<td class="tbh_11_hide">@item.SupportCallUrgency</td>
+			<td class="tbh_12_hide">@item.SupportCallStatus</td>
+			<td class="tbh_13_hide">@item.SupportCallCategory</td>
+			<td class="tbh_14_hide">@item.SupportCallOpenDate.ToShortDateString()</td>
+			<td class="tbh_15_hide">@item.SupportCallOpenTime.ToShortTimeString()</td>
+			<td class="tbh_16_hide">@item.SupportCallClosedDateNotNull.ToShortDateString()</td>
+			<td class="tbh_17_hide">@item.SupportCallClosedTimeNotNull.ToShortTimeString()</td>
+			<td class="tbh_18_hide">@item.HoursTillClosed</td>
+			<td class="tbh_19_hide">@item.HoursInStatusOpen</td>
+			<td class="tbh_20_hide">@item.HoursInvoiceCenter</td>
+			<td class="tbh_21_hide">@item.InvoiceCallSummary</td>
+			<td class="tbh_22_hide">@item.OpenedByUser</td>
+			<td class="tbh_23_hide">@item.AssignedToUser</td>
+			<td class="tbh_24_hide">@item.AssignedToQueue</td>
+			<td class="tbh_25_hide">@item.FirstEventSummary</td>
+			<td class="tbh_26_hide">@item.ClienteleSupportCallSummary</td>
+			<td class="tbh_27_hide">@item.InvoiceOrganizationName</td>
+			<td class="tbh_28_hide">@item.InvoiceOrganizationNumber</td>
+			<td class="tbh_29_hide">@item.InvoiceStatus</td>
+			<td class="tbh_30_hide">@item.HoursClienteleWorkedOnSupportCall</td>
 		</tr>
-	}
+
+			counter = counter + 1;
+		}
+		}
 </table>
+
+<!-- Het script dat zorgt voor het verbergen van de kolommen. Als er op een knop wordt gedrukt zal de function starten die vasthangt aan het
+	ID dat werd ingesteld bij die knop en zullen de overeenstemmende tableheads en table rows worden verborgen-->
+<script>
+	$(document).ready(function () {
+		$("#btnHide1").click(function () {
+			$("td.tbh_1_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_1_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide2").click(function () {
+			$("td.tbh_2_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_2_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide3").click(function () {
+			$("td.tbh_3_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_3_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide4").click(function () {
+			$("td.tbh_4_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_4_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide5").click(function () {
+			$("td.tbh_5_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_5_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide6").click(function () {
+			$("td.tbh_6_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_6_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide7").click(function () {
+			$("td.tbh_7_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_7_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide8").click(function () {
+			$("td.tbh_8_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_8_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide9").click(function () {
+			$("td.tbh_9_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_9_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide10").click(function () {
+			$("td.tbh_10_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_10_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide11").click(function () {
+			$("td.tbh_11_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_11_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide12").click(function () {
+			$("td.tbh_12_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_12_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide13").click(function () {
+			$("td.tbh_13_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_13_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide14").click(function () {
+			$("td.tbh_14_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_14_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide15").click(function () {
+			$("td.tbh_15_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_15_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide16").click(function () {
+			$("td.tbh_16_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_16_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide17").click(function () {
+			$("td.tbh_17_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_17_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide18").click(function () {
+			$("td.tbh_18_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_18_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide19").click(function () {
+			$("td.tbh_19_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_19_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide20").click(function () {
+			$("td.tbh_20_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_20_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide21").click(function () {
+			$("td.tbh_21_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_21_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide22").click(function () {
+			$("td.tbh_22_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_22_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide23").click(function () {
+			$("td.tbh_23_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_23_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide24").click(function () {
+			$("td.tbh_24_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_24_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide25").click(function () {
+			$("td.tbh_25_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_25_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide26").click(function () {
+			$("td.tbh_26_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_26_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide27").click(function () {
+			$("td.tbh_27_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_27_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide28").click(function () {
+			$("td.tbh_28_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_28_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide29").click(function () {
+			$("td.tbh_29_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_29_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+		$("#btnHide30").click(function () {
+			$("td.tbh_30_hide").addClass(function (n) {
+				return "hidden";
+			});
+			$("th.tbh_30_hide").addClass(function (n) {
+				return "hidden";
+			});
+		});
+	});
+</script>
+
 

@@ -1,0 +1,4 @@
+﻿@model DateTime
+<!-- Partial view voor Date Picker -->
+@Html.TextBoxFor("test", String.Format("{0:d}", Model.ToShortDateString()),
+  new { @class = "datefield", type = "date" })

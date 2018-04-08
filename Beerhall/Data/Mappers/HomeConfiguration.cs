@@ -11,9 +11,11 @@ namespace TrustTeamVersion4.Data.Mapping
 	{
 		public void Configure(EntityTypeBuilder<Home> builder)
 		{
-			builder.ToTable("Home");
+			builder.ToTable<Home>("Home");
 			// Mappen Primary key
 			builder.HasKey(t => new { t.Month, t.Number });
+
+			
 		}
 
 	}

@@ -16,15 +16,39 @@
     line-height: 1.4;
 }
 
+table tr th button.btn-table {
+	border: thin !important;
+	padding: 0px 0px !important;
+	background-color: inherit;
+	color: black;
+	text-align: center;
+	float: right !important;
+	display: inline-block !important;
+	margin: 0 0 0 0 !important;
+}
+table tr th button.btn-table:hover {
+	background-color: inherit;
+	color: royalblue;
+}
+	table tr th.test {
+	float: left !important;
+	display: inline-block !important;
+	vertical-align: central !important;
+	margin: 0 0 0 0 !important;
+	vertical-align: unset !important;
+}
+
 /* Make .svg files in the carousel display properly in older browsers */
 .carousel-inner .item img[src$=".svg"] {
     width: 100%;
 }
 
+
 /* QR code generator */
 #qrCode {
     margin: 15px;
 }
+
 
 /* Hide/rearrange for smaller screens */
 @media screen and (max-width: 767px) {
@@ -33,3 +57,4 @@
         display: none;
     }
 }
+

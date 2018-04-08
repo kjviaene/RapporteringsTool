@@ -4,7 +4,6 @@ namespace TrustTeamVersion4.Models.Domain
 {
 	public interface IHomeRepository
 	{
-		IEnumerable<Home> GetBy(double number);
 		IEnumerable<Home> GetAll();
 		List<double?> GetNumbers();
 		List<double?> GetYear();
@@ -23,6 +22,6 @@ namespace TrustTeamVersion4.Models.Domain
 		List<string> getAssignedToQueus();
 		List<string> getInvoiceStatusses();
 		List<Home> Filter(Home home);
-
+		string[,] GetEfficiency(IEnumerable<Home> homes);
 	}
 }

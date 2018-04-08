@@ -24,7 +24,7 @@ namespace TrustTeamVersion4
         {
             services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
-
+			services.AddSession();
             services.AddMvc();
 			
             services.AddScoped<IHomeRepository, HomeRepository>();
@@ -44,7 +44,7 @@ namespace TrustTeamVersion4
             }
 
             app.UseStaticFiles();
-
+			app.UseSession();
             app.UseMvc(routes =>
             {
                 routes.MapRoute(
