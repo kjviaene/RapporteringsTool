@@ -369,6 +369,22 @@ namespace TrustTeamVersion4.Data.Repositories
 
 			return result;
 		}
+
+		public IEnumerable<IGrouping<string, string>> GetHoursWorkedOnUrgency(IEnumerable<Home> homes)
+		{
+			foreach (var home in homes)
+			{
+				if (home.SupportCallUrgency.Equals("null"))
+				{
+					home.SupportCallUrgency = "None Assigned";
+				}
+			}
+			homes.OrderBy(h => Double.Parse(h.HoursInvoiceCenter));
+			IEnumerable<IGrouping<string, string>> grouped = homes.GroupBy(h => h.SupportCallUrgency, h => h.HoursInvoiceCenter);
+
+
+			return grouped;
+		}
 	}
 }
 

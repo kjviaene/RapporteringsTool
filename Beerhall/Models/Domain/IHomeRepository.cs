@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace TrustTeamVersion4.Models.Domain
 {
@@ -23,5 +24,6 @@ namespace TrustTeamVersion4.Models.Domain
 		List<string> getInvoiceStatusses();
 		List<Home> Filter(Home home);
 		string[,] GetEfficiency(IEnumerable<Home> homes);
+		IEnumerable<IGrouping<string, string>> GetHoursWorkedOnUrgency(IEnumerable<Home> homes);
 	}
 }

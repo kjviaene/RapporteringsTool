@@ -232,5 +232,32 @@ namespace TrustTeamVersion4.Models.Domain
 			}
 		}
 
+		// Controle om te kijken of een instantie van dit object enkel nulls en de standaardwaarden voor de datums bevat. Maw, of dit object "leeg" is.
+		public bool IsEmptyObject()
+		{
+			bool result = true;
+			int check = 0;
+			if (_PropertyInfos == null)
+				_PropertyInfos = this.GetType().GetProperties();
+			// De lus overloopt alle properties, als er eentje hiervan niet gelijk is aan null of de standaardwaarde, dan zal check gelijk worden gesteld aan 1
+			foreach (var prop in _PropertyInfos)
+			{
+				var value = prop.GetValue(this, null) ?? "null";
+				if (!(value.Equals("null")))
+				{
+					if (!(value.Equals(DateTime.MaxValue) | value.Equals(DateTime.MinValue)))
+					{
+						check = 1;
+						break;
+					}
+
+				}
+			}
+			if (check == 1)
+				result = false;
+
+			return result;
+		}
+
 	}
 }

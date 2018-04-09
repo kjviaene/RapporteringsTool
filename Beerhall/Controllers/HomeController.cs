@@ -54,8 +54,6 @@ namespace TrustTeamVersion4.Controllers
 		{ _homesFiltered =	(IEnumerable<Home>) HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
 			// ViewData met daarin alle kollom namen als strings
 			ViewData["ColumnNames"] = home.getAttributen();
-			// een Viewbag met de gekozen filters in string
-			ViewBag.filter = chosenFilter;
 			// Overlopen van alle mogelijke filters. Als sortOrder al een string bevat wil dit zeggen dat er al gesorteerd is. Als de gebruiker
 			// er dus nogmaals op geklikt heeft wil dit zeggen dat hij ze van beneden naar boven wil zien (= desc). 
 			// dan zal de waarde dus zo aangepast worden.
@@ -286,7 +284,7 @@ namespace TrustTeamVersion4.Controllers
 			// Als de filter niet null is uitvoeren, maw enkel de eerste maal dat data wordt geladen of indien er opnieuw naar de index werd gegaan
 			// om opnieuw te filteren.
 			// Dit zal dus nooit activeren als men gewoon wenst te sorteren met reeds eerdere gefilterde data
-			if (filter != null)
+			if (!(filter.IsEmptyObject()) | _homesFiltered == null)
 			{
 				// Het opslaan van de filter zodanig dit kan weergegeven worden boven de data
 				chosenFilter = filter.ToString();
@@ -295,6 +293,7 @@ namespace TrustTeamVersion4.Controllers
 				// Het filteren van de data adhv de meegeven filter.
 				_homesFiltered = _homeRepository.Filter(filter);
 
+				// Bijhouden van gefilterde Home objecten
 				HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered",_homesFiltered);
 				
 				// laden van de view met de gefilterde data
@@ -303,14 +302,47 @@ namespace TrustTeamVersion4.Controllers
 			// Dit zal nooit geactiveerd worden. Aangezien de filter of de sortOrder parameter altijd een waarde zullen hebben.
 			// Het staat hier echter omdat de vorige twee returns in een if statement staan waardoor er een error word gegeven
 			// waar wordt gezegd dat er niet altijd een return is. Dus returnen we hier gewoon homes (wat null is )
-			return View(this.homes);
+			return View(_homesFiltered);
 		}
 		public IActionResult Graphs(Home filter)
 		{
-			Home test = new Home();
-			test.InvoicCenterOrganization = "A'Domo";
-			ViewData["Bedrijf"] = test.InvoicCenterOrganization;
-			ViewData["Data"] = _homeRepository.GetEfficiency(_homeRepository.Filter(test));
+			if (!(filter.IsEmptyObject()))
+			{
+				// Het opslaan van de filter zodanig dit kan weergegeven worden boven de data
+				chosenFilter = filter.ToString();
+				// Het doorgeven van de gekozen filter als string aan de view via een ViewBag (zodat dit kan weergegeven worden)
+				ViewBag.filter = chosenFilter;
+				// Het filteren van de data adhv de meegeven filter.
+				_homesFiltered = _homeRepository.Filter(filter);
+				// Bijhouden van gefilterde Home objecten
+				HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
+			}
+			else
+			{
+				_homesFiltered = HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
+			}
+			int counter = 0;
+			string[,] efficiency = _homeRepository.GetEfficiency(_homesFiltered);
+			for (var g = 0; g < efficiency.Length/2; g++)
+			{
+				if (!(efficiency[g, 0] == null))
+				{
+					counter++;
+				}
+			}
+
+			string[] tempString = new string[counter];
+			double[] tempNumber = new double[counter];
+			for (var k = 0; k < counter; k++)
+			{
+				tempString[k] = efficiency[k, 0];
+				tempNumber[k] = Int32.Parse(efficiency[k, 1]);
+			}
+			ViewData["Bedrijf"] = filter.InvoicCenterOrganization;
+			ViewData["EfficiencyString"] = tempString;
+			ViewData["EfficiencyDouble"] = tempNumber;
+
+			ViewData["GroupedByUrgency"] = _homeRepository.GetHoursWorkedOnUrgency(_homesFiltered);
 			return View(_homesFiltered);
 		}
 

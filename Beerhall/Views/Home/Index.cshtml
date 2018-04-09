@@ -5,7 +5,7 @@
 
 
 <h3>@ViewData["Title"]</h3>
-<form class="form-group" asp-action="Table" method="post">
+<form class="form-group" method="post">
 	<label> Ticket Number </label>
 	<select asp-items="@(ViewData["TicketNumbers"] as SelectList ) " class="form-control" asp-for="Number">
 		<option value=""> --- Selecteer Ticket Nummer ---</option>
@@ -72,9 +72,9 @@
 	<label>Datum open eind</label>
 	@Html.TextBox("SupportCallOpenDateEinde", null, new { @class = "datefield", type = "date" })
 	<br />
-	<button class="btn btn-primary" type="submit">Filter</button>
+	<button class="btn btn-primary" type="submit" asp-action="Table">Filter</button>
+	<button asp-action="Graphs" class="btn btn-default" type="submit">Test Graphs</button>
 	<a asp-action="Index" class="btn btn-default">Reset</a>
 </form>
 
-<a asp-action="Graphs" class="btn btn-default">Test Graphs</a>
 

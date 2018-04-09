@@ -3,50 +3,66 @@
 	ViewData["Title"] = "Graphs";
 	Layout = "~/Views/Shared/_Layout.cshtml";
 }
-<script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
-<h2>Graphs</h2>
-<div id="chartContainer"></div>
-@{
-	string[,] temp = (string[,])ViewData["Data"];
-	string[] xas = new string[temp.Length/2];
-	double[] yas = new double[temp.Length/2];
-	for (var i = 0; i < temp.Length / 2; i++)
-	{
-		if (!(temp[i, 0] == null ))
-		{
-			xas[i] = temp[i, 0];
-			yas[i] = Int32.Parse(temp[i, 1]);
-		}
-	}
+<!-- <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script> -->
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 
+
+<h2>Graphs</h2>
+<h3>@ViewBag.filter</h3>
+<div id="chart_div"></div>
+@{
+	string[] xas = (string[])ViewData["EfficiencyString"];
+	double[] yas = (double[])ViewData["EfficiencyDouble"];
+	IEnumerable<IGrouping<string, string>> hoursWorked = (IEnumerable<IGrouping<string, string>>)ViewData["GroupedByUrgency"];
 
 }
 <script type="text/javascript">
 
-	window.onload = function () {
-		var chart = new CanvasJS.Chart("chartContainer", {
-			theme: "theme2",
-			animationEnabled: true,
-			title: {
-				text: "Aantal tickets per status"
-			},
-			subtitles: [
-			// Maak hier nog het bedrijf van waarop gefilterd werd via ViewBag/ViewData, zelfde manier van werken als bij filter tekst bovenaan
-				{ text: "@ViewData["Bedrijf"]" }
-			],
-			data: [
-				{
-					type: "column", //change type to bar, line, area, pie, etc
-					dataPoints: [
-						{y: @yas[0], label: "@xas[0]" },
-						{y: @yas[1], label: "@xas[1]" },
-						{y: @yas[2], label: "@xas[2]" }
-					]
-				}
-			]
-		});
-		chart.render();
-	};
-</script>
+// Load the Visualization API and the corechart package.
+google.charts.load('current', { 'packages': ['corechart','line'] });
+// Set a callback to run when the Google Visualization API is loaded.
+	google.charts.setOnLoadCallback(drawEfficiency);
+	google.charts.setOnLoadCallback(drawHoursworked);
+	// Callback that creates and populates a data table,instantiates the pie chart, passes in the data and draws it.
+	function drawEfficiency() {
+		// Create the data table.
+		var data = new google.visualization.DataTable();
+		@{
+			@:data.addColumn('string', 'Status');
+			@:data.addColumn('number','Aantal');
 
+			for (var k = 0; k < @yas.Length; k++)
+			{
+				@:data.addRows([['@xas[k]',@yas[k]]]);
+			}
+		}
+
+		// Set chart options
+		var options = {
+			'title': 'Aantal tickets in functie van de status',
+			'width': 800,
+			'height': 600
+		};
+		// Instantiate and draw our chart, passing in some options.
+		var chart = new google.visualization.PieChart(document.getElementById('chart_div'));
+		chart.draw(data, options);
+	}
+	function drawHoursworked() { 
+		var data = new google.visualization.DataTable();
+		data.addColumn("number"," Hours");
+		@{
+			foreach (IGrouping<string, string> urgentie in hoursWorked)
+			{ 
+				@:data.addColumn("number",@urgentie.Key);
+			}
+				foreach (IGrouping<string, string> urgentie in hoursWorked)
+				{
+					foreach (string getal in urgentie)
+					{ 
+						@:data.addRows([[]]);
+					}
+				}
+			}
+	}
+</script>
 
