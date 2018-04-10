@@ -19,7 +19,7 @@ namespace TrustTeamVersion4.Controllers
 		[JsonProperty]
 		IEnumerable<Home> _homesFiltered;
 		IEnumerable<Home> _homesSorted;
-		
+
 		public HomeController(IHomeRepository homeRepository)
 		{
 			_homeRepository = homeRepository;
@@ -27,8 +27,8 @@ namespace TrustTeamVersion4.Controllers
 
 		public IActionResult Index()
 		{ // Creatie van de mogelijke keuzes waar men op kan filteren. Deze worden uit de databank gehaald, zo blijft de dropdown altijd 
-			// up to date met de gegevens in de databank
-			//De view haalt deze op uit de ViewData's
+		  // up to date met de gegevens in de databank
+		  //De view haalt deze op uit de ViewData's
 			ViewData["TicketNumbers"] = new SelectList(_homeRepository.GetNumbers());
 			ViewData["Years"] = new SelectList(_homeRepository.GetYear());
 			ViewData["OrganizationNumbers"] = new SelectList(_homeRepository.GetOrganizationNumbers());
@@ -51,7 +51,10 @@ namespace TrustTeamVersion4.Controllers
 		// Wordt geladen als er gekozen is op wat men wil filteren plus ook als er gesorteerd wil worden eenmaal de tabel geladen is, de string sortOrder is optioneel
 		// Indien er niets gekozen werd wordt de lijst gewoon ongesorteerd weergegeven
 		public IActionResult Table(Home filter, string sortOrder)
-		{ _homesFiltered =	(IEnumerable<Home>) HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
+		{
+			_homesFiltered = (IEnumerable<Home>)HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
+			// Het doorgeven van de gekozen filter als string aan de view via een ViewBag (zodat dit kan weergegeven worden)
+			ViewBag.filter = chosenFilter;
 			// ViewData met daarin alle kollom namen als strings
 			ViewData["ColumnNames"] = home.getAttributen();
 			// Overlopen van alle mogelijke filters. Als sortOrder al een string bevat wil dit zeggen dat er al gesorteerd is. Als de gebruiker
@@ -92,15 +95,15 @@ namespace TrustTeamVersion4.Controllers
 			if (!(String.IsNullOrEmpty(sortOrder)))
 			{
 
-			
+
 				// Overlopen van de mogelijkheden om te sorteren.
 				switch (sortOrder)
 				{
 					case "numb_desc":
-						_homesSorted = (IEnumerable<Home>) _homesFiltered.ToList().OrderByDescending(h => h.Number);
+						_homesSorted = (IEnumerable<Home>)_homesFiltered.ToList().OrderByDescending(h => h.Number);
 						break;
 					case "number":
-						_homesSorted = (IEnumerable<Home>) _homesFiltered.ToList().OrderBy(h => h.Number);
+						_homesSorted = (IEnumerable<Home>)_homesFiltered.ToList().OrderBy(h => h.Number);
 						break;
 					case "Month_desc":
 						_homesSorted = (IEnumerable<Home>)_homesFiltered.ToList().OrderByDescending(h => h.Month);
@@ -277,7 +280,7 @@ namespace TrustTeamVersion4.Controllers
 						_homesSorted = (IEnumerable<Home>)_homesFiltered.ToList().OrderBy(h => h.HoursClienteleWorkedOnSupportCall);
 						break;
 				}
-				
+
 				// de view terug laden met de gesorteerde data
 				return View(_homesSorted);
 			}
@@ -294,8 +297,8 @@ namespace TrustTeamVersion4.Controllers
 				_homesFiltered = _homeRepository.Filter(filter);
 
 				// Bijhouden van gefilterde Home objecten
-				HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered",_homesFiltered);
-				
+				HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
+
 				// laden van de view met de gefilterde data
 				return View(_homesFiltered);
 			}
@@ -306,6 +309,7 @@ namespace TrustTeamVersion4.Controllers
 		}
 		public IActionResult Graphs(Home filter)
 		{
+			// Als er een filter is opgegeven dan voeren we de volgende stappen uit
 			if (!(filter.IsEmptyObject()))
 			{
 				// Het opslaan van de filter zodanig dit kan weergegeven worden boven de data
@@ -316,14 +320,16 @@ namespace TrustTeamVersion4.Controllers
 				_homesFiltered = _homeRepository.Filter(filter);
 				// Bijhouden van gefilterde Home objecten
 				HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
-			}
+			} // Als er geen filter is meegegeven dan kijken we of er eentje in de session zit
 			else
 			{
 				_homesFiltered = HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
-			}
+			}// Als er geen filter in de session zat dan tonen we charts over alle data in de DB
+			if (_homesFiltered == null)
+				_homesFiltered = _homeRepository.GetAll();
 			int counter = 0;
 			string[,] efficiency = _homeRepository.GetEfficiency(_homesFiltered);
-			for (var g = 0; g < efficiency.Length/2; g++)
+			for (var g = 0; g < efficiency.Length / 2; g++)
 			{
 				if (!(efficiency[g, 0] == null))
 				{

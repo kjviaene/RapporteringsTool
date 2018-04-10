@@ -22,7 +22,7 @@
 google.charts.load('current', { 'packages': ['corechart','line'] });
 // Set a callback to run when the Google Visualization API is loaded.
 	google.charts.setOnLoadCallback(drawEfficiency);
-	google.charts.setOnLoadCallback(drawHoursworked);
+	//google.charts.setOnLoadCallback(drawHoursworked);
 	// Callback that creates and populates a data table,instantiates the pie chart, passes in the data and draws it.
 	function drawEfficiency() {
 		// Create the data table.
@@ -47,22 +47,7 @@ google.charts.load('current', { 'packages': ['corechart','line'] });
 		var chart = new google.visualization.PieChart(document.getElementById('chart_div'));
 		chart.draw(data, options);
 	}
-	function drawHoursworked() { 
-		var data = new google.visualization.DataTable();
-		data.addColumn("number"," Hours");
-		@{
-			foreach (IGrouping<string, string> urgentie in hoursWorked)
-			{ 
-				@:data.addColumn("number",@urgentie.Key);
-			}
-				foreach (IGrouping<string, string> urgentie in hoursWorked)
-				{
-					foreach (string getal in urgentie)
-					{ 
-						@:data.addRows([[]]);
-					}
-				}
-			}
-	}
+	
+	
 </script>
 

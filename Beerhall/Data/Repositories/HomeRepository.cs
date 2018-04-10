@@ -5,6 +5,7 @@ using System.Linq;
 using TrustTeamVersion4.Models;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
+using System.Reflection;
 
 namespace TrustTeamVersion4.Data.Repositories
 {
@@ -267,68 +268,50 @@ namespace TrustTeamVersion4.Data.Repositories
 			// niet gefilterd
 			if (home != null)
 			{
+				//Het verzamelen van alle properties van het object waarop gefilterd wordt
+				PropertyInfo[] _PropertyFilter = home.GetType().GetProperties();
+
+				//Overlopen van elk object in de DB om te vergelijken met de filter
 				foreach (Home h in _homes)
 				{
-					if (!(home.Month.HasValue) | home.Month.Equals(h.Month))
+					// De counter telt hoeveel overeenkomsten er zijn en gebaseerd hierop wordt het object al dan niet toegevoegd aan de verzameling van gefilterde 
+					// objecten
+					int counter = 0;
+					PropertyInfo[] _PropertyAll = h.GetType().GetProperties();
+					// Overlopen van alle properties van het object uit de databank
+					foreach (var propAll in _PropertyAll)
 					{
-						if (!(home.Number.HasValue) | home.Number.Equals(h.Number))
+						//Het het ophalen van de waarde die vasthangt aan de property en als deze null referentie is omzetten naar een string "null"
+						var valueAll = propAll.GetValue(h, null) ?? "null";
+
+						// Overlopen van de properties van de filter en deze vergelijken met de property die we momenteel vasthebben van de filter
+						foreach (var propFilter in _PropertyFilter)
 						{
-							if (!(home.Year.HasValue) | home.Year.Equals(h.Year))
+							var valueFilter = propFilter.GetValue(home, null) ?? "null";
+							// Als de values het zelfde zijn of de value van de filter niet van het type DateTime is
+							// en niet null is dan wordt de counter met eentje verhoogd
+							if (valueAll.Equals(valueFilter) && !(valueFilter.GetType() == typeof(DateTime)) && !(valueFilter.Equals("null")))
 							{
-								if (home.OrganizationNumber == null | home.OrganizationNumber == h.OrganizationNumber)
-								{
-									if (home.InvoicCenterOrganization == null | home.InvoicCenterOrganization == h.InvoicCenterOrganization)
-									{
-										if (home.GroupName == null | home.GroupName == h.GroupName)
-										{
-											if (home.PersonName == null | home.PersonName == h.PersonName)
-											{
-												if (home.SupportCallType == null | home.SupportCallType == h.SupportCallType)
-												{
-													if (home.SupportCallPriority == null | home.SupportCallPriority == h.SupportCallPriority)
-													{
-														if (home.SupportCallImpact == null | home.SupportCallImpact == h.SupportCallImpact)
-														{
-															if (home.SupportCallUrgency == null | home.SupportCallUrgency == h.SupportCallUrgency)
-															{
-																if (home.SupportCallStatus == null | home.SupportCallStatus == h.SupportCallStatus)
-																{
-																	if (home.OpenedByUser == null | home.OpenedByUser == h.OpenedByUser)
-																	{
-																		if (home.AssignedToUser == null | home.AssignedToUser == h.AssignedToUser)
-																		{
-																			if (home.AssignedToQueue == null | home.AssignedToQueue == h.AssignedToQueue)
-																			{
-																				if (home.InvoiceStatus == null | home.InvoiceStatus == h.InvoiceStatus)
-																				{
-																					if (home.SupportCallOpenDate == DateTime.MinValue | home.SupportCallOpenDate <= h.SupportCallOpenDate)
-																					{
-																						if (home.SupportCallOpenDateEinde == DateTime.MinValue | home.SupportCallOpenDateEinde >= h.SupportCallOpenDate)
-																						{
-																							filteredHomes.Add(h);
-																						}
-																						
-																					}
-
-																				}
-																			}
-																		}
-																	}
-																}
-
-															}
-														}
-													}
-												}
-											}
-										}
-									}
-								}
+								counter++;
 
 							}
 						}
 
+
 					}
+					// De controle voor de data zijn apart omdat we hier kijken voor <= en >= en dit is niet mogelijk als we algemeen elke property overlopen
+					// Als de datum niet de minimum waarde heeft (standaard ingesteld) en tussen de ingestelde waarden ligt dan zal de counter ook verhogen
+					if (!(home.SupportCallOpenDate == DateTime.MinValue) | !(home.SupportCallOpenDateEinde == DateTime.MinValue) )
+
+						if (home.SupportCallOpenDate <= h.SupportCallOpenDate && home.SupportCallOpenDateEinde >= h.SupportCallOpenDate)
+
+							counter++;
+					// Als de counter identiek is aan het aantal properties dat werd ingesteld in de filter dan wordt deze toegevoegd aan de lijst van
+					// gefilterde objecten
+					if (counter == GetAmountOfSetProperties(home))
+						filteredHomes.Add(h);
+
+
 				}
 			}
 			// Indien er één of meer objecten voldeden aan de waarden worden deze geretourneerd. Anders zal de volledige lijst worden
@@ -343,6 +326,23 @@ namespace TrustTeamVersion4.Data.Repositories
 			}
 		}
 
+		//Telt het aantal properties die een waarde toegewezen kregen
+		public int GetAmountOfSetProperties(Home home)
+		{
+			int amount = 0;
+			PropertyInfo[] _Properties = home.GetType().GetProperties();
+
+			foreach (var prop in _Properties)
+			{
+				var value = prop.GetValue(home, null) ?? "null";
+				if (!(value.Equals("null") | value.Equals(DateTime.MinValue) | value.Equals(DateTime.MaxValue)))
+					amount++;
+			}
+
+			return amount;
+
+		}
+
 		public string[,] GetEfficiency(IEnumerable<Home> homes)
 		{
 			int counter = 0;
@@ -354,7 +354,7 @@ namespace TrustTeamVersion4.Data.Repositories
 				amount = 0;
 				foreach (var home in homes)
 				{
-					if(home.SupportCallStatus == status)
+					if (home.SupportCallStatus == status)
 					{
 						amount = amount + 1;
 					}
