@@ -11,16 +11,14 @@ namespace TrustTeamVersion4.Data.Repositories
 {
 	public class HomeRepository : IHomeRepository
 	{
+		#region Properties
 		private readonly ApplicationDbContext _dbContext;
 		private readonly DbSet<Home> _homes;
 		public IEnumerable<Home> HomesFiltered;
-
-		public void SetHomesFiltered(IEnumerable<Home> input)
-		{
-			this.HomesFiltered = input;
-		}
+		#endregion
 
 
+		#region Constructor
 		public HomeRepository(ApplicationDbContext dbContext)
 		{
 			_dbContext = dbContext;
@@ -30,12 +28,10 @@ namespace TrustTeamVersion4.Data.Repositories
 				home.SetDateNotNull();
 			}
 		}
-		// Returnen van alle objecten in de databank in lijst formaat
-		public IEnumerable<Home> GetAll()
-		{
-			return _homes.ToList();
-		}
 
+		#endregion
+
+		#region Get methodes voor de verschillen kolommen
 		// Return alle unieke nummers die in de databank zitten
 		public List<double?> GetNumbers()
 		{
@@ -260,6 +256,9 @@ namespace TrustTeamVersion4.Data.Repositories
 			statusses.Sort();
 			return statusses;
 		}
+		#endregion
+
+		#region Filter method
 		// Filter de data op basis van een Home opbject dat werd meegegeven, als een property null is zal deze ook steeds toegevoegd worden.
 		public List<Home> Filter(Home home)
 		{
@@ -289,8 +288,10 @@ namespace TrustTeamVersion4.Data.Repositories
 						{
 							var valueFilter = propFilter.GetValue(home, null) ?? "null";
 							// Als de values het zelfde zijn of de value van de filter niet van het type DateTime is
+							// er moet ook gekeken worden of het over dezelfde property gaat, dit omdat er soms in verschillende properties dezelfde waarda kan
+							// zitten. In dit geval zou de counter te veel verhogen en kan dat verkeerde resultaten geven
 							// en niet null is dan wordt de counter met eentje verhoogd
-							if (valueAll.Equals(valueFilter) && !(valueFilter.GetType() == typeof(DateTime)) && !(valueFilter.Equals("null")))
+							if (valueAll.Equals(valueFilter) && !(valueFilter.GetType() == typeof(DateTime)) && !(valueFilter.Equals("null")) && propFilter.Name == propAll.Name)
 							{
 								counter++;
 
@@ -301,11 +302,14 @@ namespace TrustTeamVersion4.Data.Repositories
 					}
 					// De controle voor de data zijn apart omdat we hier kijken voor <= en >= en dit is niet mogelijk als we algemeen elke property overlopen
 					// Als de datum niet de minimum waarde heeft (standaard ingesteld) en tussen de ingestelde waarden ligt dan zal de counter ook verhogen
-					if (!(home.SupportCallOpenDate == DateTime.MinValue) | !(home.SupportCallOpenDateEinde == DateTime.MinValue) )
+					if (!(home.SupportCallOpenDate == DateTime.MinValue) | !(home.SupportCallOpenDateEinde == DateTime.MinValue))
+					{
 
-						if (home.SupportCallOpenDate <= h.SupportCallOpenDate && home.SupportCallOpenDateEinde >= h.SupportCallOpenDate)
-
+						if (home.SupportCallOpenDate <= h.SupportCallOpenDate)
 							counter++;
+						if (home.SupportCallOpenDateEinde >= h.SupportCallOpenDate)
+							counter++;
+					}
 					// Als de counter identiek is aan het aantal properties dat werd ingesteld in de filter dan wordt deze toegevoegd aan de lijst van
 					// gefilterde objecten
 					if (counter == GetAmountOfSetProperties(home))
@@ -325,6 +329,9 @@ namespace TrustTeamVersion4.Data.Repositories
 				return _homes.ToList();
 			}
 		}
+		#endregion
+
+		#region Multiple methods
 
 		//Telt het aantal properties die een waarde toegewezen kregen
 		public int GetAmountOfSetProperties(Home home)
@@ -343,6 +350,18 @@ namespace TrustTeamVersion4.Data.Repositories
 
 		}
 
+		public void SetHomesFiltered(IEnumerable<Home> input)
+		{
+			this.HomesFiltered = input;
+		}
+
+		// Returnen van alle objecten in de databank in lijst formaat
+		public IEnumerable<Home> GetAll()
+		{
+			return _homes.ToList();
+		}
+		#endregion
+		#region Methods for the graphs page
 		public string[,] GetEfficiency(IEnumerable<Home> homes)
 		{
 			int counter = 0;
@@ -385,6 +404,113 @@ namespace TrustTeamVersion4.Data.Repositories
 
 			return grouped;
 		}
+
+		public int[,] GetIncidentenTable(IEnumerable<Home> homes)
+		{
+			int amountImpact = this.getSupportCallImpacts().Count();
+			int amountUrgency = this.getSupportCallUrgencies().Count();
+			// Table :
+			// Impact | IncidentNiv1   | IncidentNiv2   | IncidentNiv3   | IncidentNiv4
+			// Impact1|Interventiecat.1|Interventiecat.2|Interventiecat.3|Interventiecat.4|                 
+			// Impact2|Interventiecat.2|Interventiecat.3|Interventiecat.4|Interventiecat.4
+			// Impact3|Interventiecat.3|Interventiecat.4|Interventiecat.4|Interventiecat.5
+			// Impact4|Interventiecat.x|Interventiecat.x|Interventiecat.x|Interventiecat.x
+			// Dit komt dus overeen met de array, zo zullen table[0,0] ,table[0,*] en table [*,1] dus leeg blijven
+			// IncidentNiv komt overeen met SupportCallUrgency, impact met SupportCallImpact en Interventiecat. met SupportCallPriority
+
+			int[,] table = new int[amountImpact+1, amountUrgency+1];
+
+			foreach (var h in homes)
+			{
+				if (h.SupportCallImpact.StartsWith("1"))
+				{
+					if (h.SupportCallUrgency.StartsWith("1"))
+					{
+						table[1, 1]++;
+					}
+					if (h.SupportCallUrgency.StartsWith("2"))
+					{
+						table[1, 2]++;
+					}
+					if (h.SupportCallUrgency.StartsWith("3"))
+					{
+						table[1, 3]++;
+					}
+					if (h.SupportCallUrgency.StartsWith("4"))
+					{
+						table[1, 4]++;
+					}
+					if (h.SupportCallUrgency.StartsWith("5"))
+					{
+						table[1, 5]++;
+					}
+					if (h.SupportCallUrgency.StartsWith("N"))
+					{
+						table[1, 6]++;
+					}
+				}
+				if (h.SupportCallImpact.StartsWith("2"))
+				{
+					if (h.SupportCallUrgency.StartsWith("1"))
+					{
+						table[2, 1]++;
+					}
+					if (h.SupportCallUrgency.StartsWith("2"))
+					{
+						table[2, 2]++;
+					}
+					if (h.SupportCallUrgency.StartsWith("3"))
+					{
+						table[2, 3]++;
+					}
+					if (h.SupportCallUrgency.StartsWith("4"))
+					{
+						table[2, 4]++;
+					}
+					if (h.SupportCallUrgency.StartsWith("5"))
+					{
+						table[2, 5]++;
+					}
+					if (h.SupportCallUrgency.StartsWith("N"))
+					{
+						table[2, 6]++;
+					}
+				}
+				if (h.SupportCallImpact.StartsWith("3"))
+				{
+					if (h.SupportCallUrgency.StartsWith("1"))
+					{
+						table[3, 1]++;
+					}
+					if (h.SupportCallUrgency.StartsWith("2"))
+					{
+						table[3, 2]++;
+					}
+					if (h.SupportCallUrgency.StartsWith("3"))
+					{
+						table[3, 3]++;
+					}
+					if (h.SupportCallUrgency.StartsWith("4"))
+					{
+						table[3, 4]++;
+					}
+					if (h.SupportCallUrgency.StartsWith("5"))
+					{
+						table[3, 5]++;
+					}
+					if (h.SupportCallUrgency.StartsWith("N"))
+					{
+						table[3, 6]++;
+					}
+				}
+				if (h.SupportCallImpact.Equals("NULL"))
+					table[4, 1]++;
+			}
+
+			return table;
+		}
+		#endregion
+
 	}
 }
 

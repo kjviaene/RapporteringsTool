@@ -26,5 +26,6 @@ namespace TrustTeamVersion4.Models.Domain
 		string[,] GetEfficiency(IEnumerable<Home> homes);
 		IEnumerable<IGrouping<string, string>> GetHoursWorkedOnUrgency(IEnumerable<Home> homes);
 		int GetAmountOfSetProperties(Home home);
+		int[,] GetIncidentenTable(IEnumerable<Home> homes);
 	}
 }

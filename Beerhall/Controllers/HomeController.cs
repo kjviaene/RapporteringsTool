@@ -12,6 +12,7 @@ namespace TrustTeamVersion4.Controllers
 {
 	public class HomeController : Controller
 	{
+		#region Properties
 		private readonly IHomeRepository _homeRepository;
 		private static String chosenFilter;
 		Home home = new Home();
@@ -19,12 +20,13 @@ namespace TrustTeamVersion4.Controllers
 		[JsonProperty]
 		IEnumerable<Home> _homesFiltered;
 		IEnumerable<Home> _homesSorted;
-
+		#endregion
+		#region Constructor
 		public HomeController(IHomeRepository homeRepository)
 		{
 			_homeRepository = homeRepository;
 		}
-
+		#endregion
 		public IActionResult Index()
 		{ // Creatie van de mogelijke keuzes waar men op kan filteren. Deze worden uit de databank gehaald, zo blijft de dropdown altijd 
 		  // up to date met de gegevens in de databank
@@ -48,6 +50,7 @@ namespace TrustTeamVersion4.Controllers
 			return View();
 		}
 
+		#region Table method
 		// Wordt geladen als er gekozen is op wat men wil filteren plus ook als er gesorteerd wil worden eenmaal de tabel geladen is, de string sortOrder is optioneel
 		// Indien er niets gekozen werd wordt de lijst gewoon ongesorteerd weergegeven
 		public IActionResult Table(Home filter, string sortOrder)
@@ -55,8 +58,7 @@ namespace TrustTeamVersion4.Controllers
 			_homesFiltered = (IEnumerable<Home>)HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
 			// Het doorgeven van de gekozen filter als string aan de view via een ViewBag (zodat dit kan weergegeven worden)
 			ViewBag.filter = chosenFilter;
-			// ViewData met daarin alle kollom namen als strings
-			ViewData["ColumnNames"] = home.getAttributen();
+			#region SortOrder
 			// Overlopen van alle mogelijke filters. Als sortOrder al een string bevat wil dit zeggen dat er al gesorteerd is. Als de gebruiker
 			// er dus nogmaals op geklikt heeft wil dit zeggen dat hij ze van beneden naar boven wil zien (= desc). 
 			// dan zal de waarde dus zo aangepast worden.
@@ -90,11 +92,11 @@ namespace TrustTeamVersion4.Controllers
 			ViewBag.InvoiceOrganizationNumber = sortOrder == "InvoiceOrganizationNumber" ? "InvoiceOrganizationNumber_desc" : "InvoiceOrganizationNumber";
 			ViewBag.InvoiceStatus = sortOrder == "InvoiceStatus" ? "InvoiceStatus_desc" : "InvoiceStatus";
 			ViewBag.HoursClienteleWorkedOnSupportCall = sortOrder == "HoursClienteleWorkedOnSupportCall" ? "HoursClienteleWorkedOnSupportCall_desc" : "HoursClienteleWorkedOnSupportCall";
-
+			
+			#region Switch statement
 			// Controleren of de gebruiker iets ingaf om te sorteren
 			if (!(String.IsNullOrEmpty(sortOrder)))
 			{
-
 
 				// Overlopen van de mogelijkheden om te sorteren.
 				switch (sortOrder)
@@ -280,10 +282,13 @@ namespace TrustTeamVersion4.Controllers
 						_homesSorted = (IEnumerable<Home>)_homesFiltered.ToList().OrderBy(h => h.HoursClienteleWorkedOnSupportCall);
 						break;
 				}
+				#endregion
+			
 
 				// de view terug laden met de gesorteerde data
 				return View(_homesSorted);
 			}
+			#endregion
 			// Als de filter niet null is uitvoeren, maw enkel de eerste maal dat data wordt geladen of indien er opnieuw naar de index werd gegaan
 			// om opnieuw te filteren.
 			// Dit zal dus nooit activeren als men gewoon wenst te sorteren met reeds eerdere gefilterde data
@@ -298,7 +303,6 @@ namespace TrustTeamVersion4.Controllers
 
 				// Bijhouden van gefilterde Home objecten
 				HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
-
 				// laden van de view met de gefilterde data
 				return View(_homesFiltered);
 			}
@@ -307,6 +311,8 @@ namespace TrustTeamVersion4.Controllers
 			// waar wordt gezegd dat er niet altijd een return is. Dus returnen we hier gewoon homes (wat null is )
 			return View(_homesFiltered);
 		}
+		#endregion
+		#region Graphs method
 		public IActionResult Graphs(Home filter)
 		{
 			// Als er een filter is opgegeven dan voeren we de volgende stappen uit
@@ -320,13 +326,16 @@ namespace TrustTeamVersion4.Controllers
 				_homesFiltered = _homeRepository.Filter(filter);
 				// Bijhouden van gefilterde Home objecten
 				HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
-			} // Als er geen filter is meegegeven dan kijken we of er eentje in de session zit
+			}
+			// Als er geen filter is meegegeven dan kijken we of er eentje in de session zit
 			else
 			{
 				_homesFiltered = HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
 			}// Als er geen filter in de session zat dan tonen we charts over alle data in de DB
-			if (_homesFiltered == null)
+			if (_homesFiltered == null )
 				_homesFiltered = _homeRepository.GetAll();
+
+			#region PieChart1
 			int counter = 0;
 			string[,] efficiency = _homeRepository.GetEfficiency(_homesFiltered);
 			for (var g = 0; g < efficiency.Length / 2; g++)
@@ -347,11 +356,34 @@ namespace TrustTeamVersion4.Controllers
 			ViewData["Bedrijf"] = filter.InvoicCenterOrganization;
 			ViewData["EfficiencyString"] = tempString;
 			ViewData["EfficiencyDouble"] = tempNumber;
-
-			ViewData["GroupedByUrgency"] = _homeRepository.GetHoursWorkedOnUrgency(_homesFiltered);
+			#endregion
+			#region IncidentenTabel
+			List<string> removeNullImp = _homeRepository.getSupportCallImpacts();
+			int index = removeNullImp.IndexOf("NULL");
+			if (index != -1)
+				removeNullImp[index] = "Not Set";
+			List<string> removeNullUrg = _homeRepository.getSupportCallUrgencies();
+			int index2 = removeNullUrg.IndexOf("NULL");
+			if (index2 != -1)
+				removeNullUrg[index2] = "Not Set";
+			ViewData["Impacts"] = removeNullImp;
+			ViewData["Urgenties"] = removeNullUrg;
+			ViewData["Prioriteiten"] = _homeRepository.GetIncidentenTable(_homesFiltered);
+			#endregion
 			return View(_homesFiltered);
 		}
+		#endregion
+		#region Reset method
+		public IActionResult  Reset()
+		{
+			_homesFiltered = null;
+			HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
+			return View("Index", new Home());
 
+		}
 
+		#endregion
+		#region methods
+		#endregion
 	}
 }

@@ -15,9 +15,9 @@ namespace TrustteamVersion4.Models.Extension
 		public static void SetObject<IEnumerable>(this ISession session, string key, IEnumerable<Home> value)
 		{
 			session.SetString(key, JsonConvert.SerializeObject(value));
-			
-		}
 
+		}
+		
 		//Het lezen van een object uit een sessie
 		public static IEnumerable<Home> GetObject<IEnumerable>(this ISession session, string key)
 		{
@@ -26,5 +26,6 @@ namespace TrustteamVersion4.Models.Extension
 			{value = ""; }
 			return JsonConvert.DeserializeObject<IEnumerable<Home>>(value);
 		}
-    }
+
+	}
 }

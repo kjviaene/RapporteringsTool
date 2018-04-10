@@ -10,6 +10,38 @@
 <h2>Graphs</h2>
 <h3>@ViewBag.filter</h3>
 <div id="chart_div"></div>
+
+@{
+	List<string> impacts = (List<string>)ViewData["Impacts"];
+	List<string> urgenties = (List<string>)ViewData["Urgenties"];
+	int[,] Priorities = (int[,])ViewData["Prioriteiten"];
+}
+
+<table class="table table-striped table-condensed table-bordered table-responsive">
+	<tr>
+		<th>Impact</th>
+		@{
+			foreach (var urg in urgenties)
+			{
+				<th>@urg</th>
+			}
+
+		}
+	</tr>
+	@{
+		int counter = 1;
+		foreach (var mod in impacts)
+		{
+			<tr>
+				<td>@mod</td><td>@Priorities[counter,1]</td><td>@Priorities[counter, 2]</td><td>@Priorities[counter, 3]</td><td>@Priorities[counter, 4]</td><td>@Priorities[counter, 5]</td><td>@Priorities[counter, 6]</td>
+			</tr>
+			counter++;
+
+		}
+	}
+</table>
+
+
 @{
 	string[] xas = (string[])ViewData["EfficiencyString"];
 	double[] yas = (double[])ViewData["EfficiencyDouble"];
@@ -47,7 +79,7 @@ google.charts.load('current', { 'packages': ['corechart','line'] });
 		var chart = new google.visualization.PieChart(document.getElementById('chart_div'));
 		chart.draw(data, options);
 	}
-	
-	
+
+
 </script>
 
