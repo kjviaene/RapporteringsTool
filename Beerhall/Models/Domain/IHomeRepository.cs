@@ -27,5 +27,6 @@ namespace TrustTeamVersion4.Models.Domain
 		IEnumerable<IGrouping<string, string>> GetHoursWorkedOnUrgency(IEnumerable<Home> homes);
 		int GetAmountOfSetProperties(Home home);
 		int[,] GetIncidentenTable(IEnumerable<Home> homes);
+		IEnumerable<Home> RemoveNull(IEnumerable<Home> homes);
 	}
 }

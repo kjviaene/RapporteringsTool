@@ -13,6 +13,7 @@ namespace TrustTeamVersion4.Models.Domain
 	[JsonObject(MemberSerialization.OptIn)]
 	public class Home
 	{
+		#region Properties
 		private PropertyInfo[] _PropertyInfos = null;
 		private DateTime _tempDate = DateTime.MaxValue;
 		private DateTime _tempTime = DateTime.MaxValue;
@@ -147,7 +148,11 @@ namespace TrustTeamVersion4.Models.Domain
 		[JsonProperty]
 		[Display(Name = "Hours clientele worked on suppor call")]
 		public string HoursClienteleWorkedOnSupportCall { get; set; }
-
+		[JsonProperty]
+		[NotMapped]
+		public bool LastMonth { get; set; }
+		#endregion
+		#region ToString
 		// Het aanpassen van de ToString zodanig deze alle properties returnt met steeds de waarde erbij in volgend formaat:
 		// Property: value, Property: value,...
 		//Indien dit wordt opgevraagd op een instantie waar alle properties null zijn dan zal er gewoon een / geretourneerd worden
@@ -162,7 +167,7 @@ namespace TrustTeamVersion4.Models.Domain
 			foreach (var info in _PropertyInfos)
 			{
 				var value = info.GetValue(this, null) ?? "null";
-				if (!(value.Equals("null")))
+				if (!(value.Equals("null") | info.GetType() == typeof(bool)))
 				{
 					// Controle om te zorgen dat de DateTime niet sowieso wordt afgeprint omdat dit nooit null is maar wordt ingesteld op de 
 					// min en max waarde
@@ -194,6 +199,8 @@ namespace TrustTeamVersion4.Models.Domain
 			}
 			return result;
 		}
+		#endregion
+		#region Other methods
 		// Het retournenen van alle attributen als strings in een lijst
 		public SelectList getAttributen() {
 			List<String> temp = new List<String>();
@@ -259,5 +266,29 @@ namespace TrustTeamVersion4.Models.Domain
 			return result;
 		}
 
+		//making sure if a string is null it's converted into a string value "null"
+		public void RemoveNull()
+		{
+			PropertyInfo[] _Properties = this.GetType().GetProperties();
+			foreach (var prop in _Properties)
+			{
+				this.SetDateNotNull();
+				if (prop.GetType() == typeof(string))
+				{
+					if (prop.GetValue(this, null) == null)
+						prop.SetValue(this, "NULL");
+				}
+			}
+		}
+
+		public void CheckAndSetLastMonth()
+		{ int substractMonth = -(1);
+			if (this.LastMonth)
+			{
+				this.SupportCallOpenDate = DateTime.Now.AddMonths(substractMonth);
+				this.SupportCallOpenDateEinde = DateTime.Now;
+			}
+		}
+		#endregion
 	}
 }

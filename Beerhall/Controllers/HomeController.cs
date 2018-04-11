@@ -27,29 +27,13 @@ namespace TrustTeamVersion4.Controllers
 			_homeRepository = homeRepository;
 		}
 		#endregion
+		#region Index
 		public IActionResult Index()
-		{ // Creatie van de mogelijke keuzes waar men op kan filteren. Deze worden uit de databank gehaald, zo blijft de dropdown altijd 
-		  // up to date met de gegevens in de databank
-		  //De view haalt deze op uit de ViewData's
-			ViewData["TicketNumbers"] = new SelectList(_homeRepository.GetNumbers());
-			ViewData["Years"] = new SelectList(_homeRepository.GetYear());
-			ViewData["OrganizationNumbers"] = new SelectList(_homeRepository.GetOrganizationNumbers());
-			ViewData["InvoiceOrg"] = new SelectList(_homeRepository.getInvoiceCenterOrganizations());
-			ViewData["GroupNames"] = new SelectList(_homeRepository.getGroupNames());
-			ViewData["PersonNames"] = new SelectList(_homeRepository.getPersonNames());
-			ViewData["SupportCallTypes"] = new SelectList(_homeRepository.getSupportCallTypes());
-			ViewData["SupportCallPriorities"] = new SelectList(_homeRepository.getSupportCallPriorities());
-			ViewData["SupportCallImpacts"] = new SelectList(_homeRepository.getSupportCallImpacts());
-			ViewData["SupportCallUrgencies"] = new SelectList(_homeRepository.getSupportCallUrgencies());
-			ViewData["SupportCallstatusses"] = new SelectList(_homeRepository.getSupportCallStatusses());
-			ViewData["SupportCallCategories"] = new SelectList(_homeRepository.getSupportCallCategories());
-			ViewData["OpenedByUsers"] = new SelectList(_homeRepository.getOpenedByUsers());
-			ViewData["AssignedToUsers"] = new SelectList(_homeRepository.getAssignedtoUsers());
-			ViewData["AssignedToQueus"] = new SelectList(_homeRepository.getAssignedToQueus());
-			ViewData["InvoiceStatusses"] = new SelectList(_homeRepository.getInvoiceStatusses());
+		{
+			SetViewDataIndex();
 			return View();
 		}
-
+		#endregion
 		#region Table method
 		// Wordt geladen als er gekozen is op wat men wil filteren plus ook als er gesorteerd wil worden eenmaal de tabel geladen is, de string sortOrder is optioneel
 		// Indien er niets gekozen werd wordt de lijst gewoon ongesorteerd weergegeven
@@ -294,12 +278,14 @@ namespace TrustTeamVersion4.Controllers
 			// Dit zal dus nooit activeren als men gewoon wenst te sorteren met reeds eerdere gefilterde data
 			if (!(filter.IsEmptyObject()) | _homesFiltered == null)
 			{
-				// Het opslaan van de filter zodanig dit kan weergegeven worden boven de data
-				chosenFilter = filter.ToString();
-				// Het doorgeven van de gekozen filter als string aan de view via een ViewBag (zodat dit kan weergegeven worden)
-				ViewBag.filter = chosenFilter;
 				// Het filteren van de data adhv de meegeven filter.
 				_homesFiltered = _homeRepository.Filter(filter);
+
+				// Het opslaan van de filter zodanig dit kan weergegeven worden boven de data
+				chosenFilter = filter.ToString();
+
+				// Het doorgeven van de gekozen filter als string aan de view via een ViewBag (zodat dit kan weergegeven worden)
+				ViewBag.filter = chosenFilter;
 
 				// Bijhouden van gefilterde Home objecten
 				HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
@@ -358,6 +344,7 @@ namespace TrustTeamVersion4.Controllers
 			ViewData["EfficiencyDouble"] = tempNumber;
 			#endregion
 			#region IncidentenTabel
+			// Het aanpassen van de NULL string naar Not Set omdat het mooier oogt in de tabel
 			List<string> removeNullImp = _homeRepository.getSupportCallImpacts();
 			int index = removeNullImp.IndexOf("NULL");
 			if (index != -1)
@@ -366,6 +353,8 @@ namespace TrustTeamVersion4.Controllers
 			int index2 = removeNullUrg.IndexOf("NULL");
 			if (index2 != -1)
 				removeNullUrg[index2] = "Not Set";
+			// Verzamelen van alle nodige data voor de tabel samen te steken (mogelijke impacts, mogelijke urgenties en de totale aantal per categorie
+
 			ViewData["Impacts"] = removeNullImp;
 			ViewData["Urgenties"] = removeNullUrg;
 			ViewData["Prioriteiten"] = _homeRepository.GetIncidentenTable(_homesFiltered);
@@ -378,12 +367,62 @@ namespace TrustTeamVersion4.Controllers
 		{
 			_homesFiltered = null;
 			HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
-			return View("Index", new Home());
+			SetViewDataIndex();
+			return View("Index");
 
 		}
 
 		#endregion
+		#region SlaFilter method
+		public ActionResult SlaFilter(string imp, string urg) {
+			IEnumerable<Home> _SlaPriorities = Enumerable.Empty<Home>();
+			if (imp == "Not Set")
+				imp = "NULL";
+			if (urg == "Not Set")
+				urg = "NULL";
+			if (_homesFiltered == null)
+			{
+				_homesFiltered = HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
+				if (_homesFiltered == null)
+				{
+					_homesFiltered = _homeRepository.GetAll();
+				}
+				_homeRepository.RemoveNull(_homesFiltered);
+				_SlaPriorities = _homesFiltered.Where(h => h.SupportCallImpact.Equals(imp) && h.SupportCallUrgency.Equals(urg));
+			}
+			else
+			{
+
+				_homeRepository.RemoveNull(_homesFiltered);
+				_SlaPriorities = _homesFiltered.Where(h => h.SupportCallImpact.Equals(imp) && h.SupportCallUrgency.Equals(urg));
+				
+			}
+			return View("Table",_SlaPriorities);
+		}
+#endregion
+
 		#region methods
+		public void SetViewDataIndex() {
+			// Creatie van de mogelijke keuzes waar men op kan filteren. Deze worden uit de databank gehaald, zo blijft de dropdown altijd 
+			// up to date met de gegevens in de databank
+			//De view haalt deze op uit de ViewData's
+			ViewData["TicketNumbers"] = new SelectList(_homeRepository.GetNumbers());
+			ViewData["Years"] = new SelectList(_homeRepository.GetYear());
+			ViewData["OrganizationNumbers"] = new SelectList(_homeRepository.GetOrganizationNumbers());
+			ViewData["InvoiceOrg"] = new SelectList(_homeRepository.getInvoiceCenterOrganizations());
+			ViewData["GroupNames"] = new SelectList(_homeRepository.getGroupNames());
+			ViewData["PersonNames"] = new SelectList(_homeRepository.getPersonNames());
+			ViewData["SupportCallTypes"] = new SelectList(_homeRepository.getSupportCallTypes());
+			ViewData["SupportCallPriorities"] = new SelectList(_homeRepository.getSupportCallPriorities());
+			ViewData["SupportCallImpacts"] = new SelectList(_homeRepository.getSupportCallImpacts());
+			ViewData["SupportCallUrgencies"] = new SelectList(_homeRepository.getSupportCallUrgencies());
+			ViewData["SupportCallstatusses"] = new SelectList(_homeRepository.getSupportCallStatusses());
+			ViewData["SupportCallCategories"] = new SelectList(_homeRepository.getSupportCallCategories());
+			ViewData["OpenedByUsers"] = new SelectList(_homeRepository.getOpenedByUsers());
+			ViewData["AssignedToUsers"] = new SelectList(_homeRepository.getAssignedtoUsers());
+			ViewData["AssignedToQueus"] = new SelectList(_homeRepository.getAssignedToQueus());
+			ViewData["InvoiceStatusses"] = new SelectList(_homeRepository.getInvoiceStatusses());
+		}
 		#endregion
 	}
 }

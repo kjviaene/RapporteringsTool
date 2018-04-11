@@ -67,10 +67,13 @@
 	<select asp-items="@(ViewData["InvoiceStatusses"] as SelectList)" class="form-control" asp-for="InvoiceStatus">
 		<option value=""> --- Selecteer Invoice Status ---</option>
 	</select>
-	<label>Datum open begin</label>
-	@Html.TextBox("SupportCallOpenDate", null, new { @class = "datefield", type = "date" })
-	<label>Datum open eind</label>
-	@Html.TextBox("SupportCallOpenDateEinde", null, new { @class = "datefield", type = "date" })
+	<div >
+		<label>Datum open begin</label>
+		@Html.TextBox("SupportCallOpenDate", null, new { @class = "datefield", type = "date" })
+		<label>Datum open eind</label>
+		@Html.TextBox("SupportCallOpenDateEinde", null, new { @class = "datefield", type = "date" })
+	</div>
+	<b>Voorbije maand: </b>@Html.CheckBoxFor(m => m.LastMonth); 
 	<br />
 	<button class="btn btn-primary" type="submit" asp-action="Table">Filter</button>
 	<button asp-action="Graphs" class="btn btn-primary" type="submit">Graphs & Information</button>

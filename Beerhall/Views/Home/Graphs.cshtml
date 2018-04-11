@@ -4,12 +4,13 @@
 	Layout = "~/Views/Shared/_Layout.cshtml";
 }
 <!-- <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script> -->
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 
 
 <h2>Graphs</h2>
 <h3>@ViewBag.filter</h3>
-<div id="chart_div"></div>
 
 @{
 	List<string> impacts = (List<string>)ViewData["Impacts"];
@@ -17,7 +18,7 @@
 	int[,] Priorities = (int[,])ViewData["Prioriteiten"];
 }
 
-<table class="table table-striped table-condensed table-bordered table-responsive">
+<table class="table table-striped table-condensed table-bordered table-responsive table-hover">
 	<tr>
 		<th>Impact</th>
 		@{
@@ -29,19 +30,28 @@
 		}
 	</tr>
 	@{
-		int counter = 1;
+		int counter_imp = 1;
 		foreach (var mod in impacts)
 		{
+			int counter_urg = 1;
 			<tr>
-				<td>@mod</td><td>@Priorities[counter,1]</td><td>@Priorities[counter, 2]</td><td>@Priorities[counter, 3]</td><td>@Priorities[counter, 4]</td><td>@Priorities[counter, 5]</td><td>@Priorities[counter, 6]</td>
-			</tr>
-			counter++;
+				<td>@mod</td>
+				@{
+					foreach (var urg in urgenties)
+					{
+						string value = @Priorities[counter_imp, counter_urg].ToString();
+						<td>@Html.ActionLink(value, "SlaFilter", new { imp = @impacts[counter_imp - 1], urg = @urgenties[counter_urg - 1] })</td>
+						counter_urg++;
+					}
 
+					counter_imp++;
+				}
+			</tr>
 		}
 	}
 </table>
 
-
+<div id="chart_div"></div>
 @{
 	string[] xas = (string[])ViewData["EfficiencyString"];
 	double[] yas = (double[])ViewData["EfficiencyDouble"];
@@ -81,5 +91,25 @@ google.charts.load('current', { 'packages': ['corechart','line'] });
 	}
 
 
+</script>
+
+<script type="text/javascript">
+	$("#toon_1_1").click(function () {
+		alert("hey");
+		$.ajax({
+			url: 'Home',
+			data: { imp: @impacts[0], urg: @urgenties[0] }
+		})
+		@*window.location.href = '@Url.Action("SlaFilter","Home") + @impacts[0] + @urgenties[0] )'
+		$.post("@Url.Action("SlaFilter")", {row : @impacts[0], col : @urgenties[0]})*
+		document.post("@Url.Action("SlaFilter")", {row : @impacts[0], col : @urgenties[0]});*@
+	});
+	function test()
+	{
+		$.ajax({
+			url: 'Home',
+			data: { imp: @impacts[0], urg: @urgenties[0] }
+		})
+	 }
 </script>
 

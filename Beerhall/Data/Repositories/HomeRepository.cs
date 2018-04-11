@@ -267,6 +267,8 @@ namespace TrustTeamVersion4.Data.Repositories
 			// niet gefilterd
 			if (home != null)
 			{
+				// Als er gefilterd werd op de laatste maand dan moeten deze variabelen eerst ingesteld worden
+				home.CheckAndSetLastMonth();
 				//Het verzamelen van alle properties van het object waarop gefilterd wordt
 				PropertyInfo[] _PropertyFilter = home.GetType().GetProperties();
 
@@ -331,7 +333,7 @@ namespace TrustTeamVersion4.Data.Repositories
 		}
 		#endregion
 
-		#region Multiple methods
+		#region Other methods
 
 		//Telt het aantal properties die een waarde toegewezen kregen
 		public int GetAmountOfSetProperties(Home home)
@@ -360,7 +362,21 @@ namespace TrustTeamVersion4.Data.Repositories
 		{
 			return _homes.ToList();
 		}
+
+		// Het veranderen van waarden die misschien een null referentie hebben naar een string die "NULL" zegt.
+		public IEnumerable<Home> RemoveNull(IEnumerable<Home> homes)
+		{
+			foreach (var h in homes)
+			{
+				h.RemoveNull();
+			}
+
+			return homes;
+
+		}
+
 		#endregion
+
 		#region Methods for the graphs page
 		public string[,] GetEfficiency(IEnumerable<Home> homes)
 		{
@@ -405,6 +421,7 @@ namespace TrustTeamVersion4.Data.Repositories
 			return grouped;
 		}
 
+		//Het verzamelen van het aantal issues die thuis horen in elke interventie categorie.
 		public int[,] GetIncidentenTable(IEnumerable<Home> homes)
 		{
 			int amountImpact = this.getSupportCallImpacts().Count();
@@ -504,7 +521,32 @@ namespace TrustTeamVersion4.Data.Repositories
 					}
 				}
 				if (h.SupportCallImpact.Equals("NULL"))
-					table[4, 1]++;
+				{
+					if (h.SupportCallUrgency.StartsWith("1"))
+					{
+						table[4, 1]++;
+					}
+					if (h.SupportCallUrgency.StartsWith("2"))
+					{
+						table[4, 2]++;
+					}
+					if (h.SupportCallUrgency.StartsWith("3"))
+					{
+						table[4, 3]++;
+					}
+					if (h.SupportCallUrgency.StartsWith("4"))
+					{
+						table[4, 4]++;
+					}
+					if (h.SupportCallUrgency.StartsWith("5"))
+					{
+						table[4, 5]++;
+					}
+					if (h.SupportCallUrgency.StartsWith("N"))
+					{
+						table[4, 6]++;
+					}
+				}
 			}
 
 			return table;
