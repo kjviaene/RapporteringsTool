@@ -18,8 +18,9 @@ namespace TrustTeamVersion4.Controllers
 		Home home = new Home();
 		IEnumerable<Home> homes;
 		[JsonProperty]
-		IEnumerable<Home> _homesFiltered;
-		IEnumerable<Home> _homesSorted;
+		IEnumerable<Home> _homesFiltered = Enumerable.Empty<Home>();
+		IEnumerable<Home> _homesSorted = Enumerable.Empty<Home>();
+		IEnumerable<Home> _EmptyEnumerable = Enumerable.Empty<Home>();
 		#endregion
 		#region Constructor
 		public HomeController(IHomeRepository homeRepository)
@@ -31,7 +32,7 @@ namespace TrustTeamVersion4.Controllers
 		public IActionResult Index()
 		{
 			SetViewDataIndex();
-			return View();
+			return View("Index");
 		}
 		#endregion
 		#region Table method
@@ -39,6 +40,7 @@ namespace TrustTeamVersion4.Controllers
 		// Indien er niets gekozen werd wordt de lijst gewoon ongesorteerd weergegeven
 		public IActionResult Table(Home filter, string sortOrder)
 		{
+			
 			_homesFiltered = (IEnumerable<Home>)HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
 			// Het doorgeven van de gekozen filter als string aan de view via een ViewBag (zodat dit kan weergegeven worden)
 			ViewBag.filter = chosenFilter;
@@ -289,8 +291,11 @@ namespace TrustTeamVersion4.Controllers
 
 				// Bijhouden van gefilterde Home objecten
 				HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
-				// laden van de view met de gefilterde data
-				return View(_homesFiltered);
+			}
+			if (CheckInput(filter))
+			{
+				SetViewDataIndex();
+				return View("Index");
 			}
 			// Dit zal nooit geactiveerd worden. Aangezien de filter of de sortOrder parameter altijd een waarde zullen hebben.
 			// Het staat hier echter omdat de vorige twee returns in een if statement staan waardoor er een error word gegeven
@@ -301,6 +306,7 @@ namespace TrustTeamVersion4.Controllers
 		#region Graphs method
 		public IActionResult Graphs(Home filter)
 		{
+			
 			// Als er een filter is opgegeven dan voeren we de volgende stappen uit
 			if (!(filter.IsEmptyObject()))
 			{
@@ -318,9 +324,11 @@ namespace TrustTeamVersion4.Controllers
 			{
 				_homesFiltered = HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
 			}// Als er geen filter in de session zat dan tonen we charts over alle data in de DB
-			if (_homesFiltered == null )
-				_homesFiltered = _homeRepository.GetAll();
-
+			if (CheckInput(filter))
+			{
+				SetViewDataIndex();
+				return View("Index");
+			}
 			#region PieChart1
 			int counter = 0;
 			string[,] efficiency = _homeRepository.GetEfficiency(_homesFiltered);
@@ -359,13 +367,25 @@ namespace TrustTeamVersion4.Controllers
 			ViewData["Urgenties"] = removeNullUrg;
 			ViewData["Prioriteiten"] = _homeRepository.GetIncidentenTable(_homesFiltered);
 			#endregion
+
+			#region Aantal per categorie
+			List<string> categories = _homeRepository.getSupportCallCategories();
+			int[] amounts = _homeRepository.GetCategoryCount(_homesFiltered);
+
+			categories.Sort();
+
+
+			ViewData["Categories"] = categories;
+			ViewData["NrPerCategory"] = amounts;
+
+			#endregion
 			return View(_homesFiltered);
 		}
 		#endregion
 		#region Reset method
 		public IActionResult  Reset()
 		{
-			_homesFiltered = null;
+			_homesFiltered = _EmptyEnumerable;
 			HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
 			SetViewDataIndex();
 			return View("Index");
@@ -422,6 +442,32 @@ namespace TrustTeamVersion4.Controllers
 			ViewData["AssignedToUsers"] = new SelectList(_homeRepository.getAssignedtoUsers());
 			ViewData["AssignedToQueus"] = new SelectList(_homeRepository.getAssignedToQueus());
 			ViewData["InvoiceStatusses"] = new SelectList(_homeRepository.getInvoiceStatusses());
+		}
+
+		public bool CheckInput(Home home)
+		{
+			if (_homesFiltered.Count() == 0)
+			{
+				string ErrorMessage = "Deze zoekopdracht leverde geen resultaten op of u gaf geen gegevens in om op te filteren.";
+				ViewData["Error"] = ErrorMessage;
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
+		public bool CheckInputMany(IEnumerable<Home> homes)
+		{
+			if (homes.Count() == 0 )
+			{
+				string ErrorMessage = "Deze zoekopdracht leverde geen resultaten op of u gaf geen gegevens in om op te filteren.";
+				ViewData["Error"] = ErrorMessage;
+				return true;
+			}
+			else
+			{
+				return false;
+			}
 		}
 		#endregion
 	}

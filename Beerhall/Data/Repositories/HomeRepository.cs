@@ -405,22 +405,6 @@ namespace TrustTeamVersion4.Data.Repositories
 			return result;
 		}
 
-		public IEnumerable<IGrouping<string, string>> GetHoursWorkedOnUrgency(IEnumerable<Home> homes)
-		{
-			foreach (var home in homes)
-			{
-				if (home.SupportCallUrgency.Equals("null"))
-				{
-					home.SupportCallUrgency = "None Assigned";
-				}
-			}
-			homes.OrderBy(h => Double.Parse(h.HoursInvoiceCenter));
-			IEnumerable<IGrouping<string, string>> grouped = homes.GroupBy(h => h.SupportCallUrgency, h => h.HoursInvoiceCenter);
-
-
-			return grouped;
-		}
-
 		//Het verzamelen van het aantal issues die thuis horen in elke interventie categorie.
 		public int[,] GetIncidentenTable(IEnumerable<Home> homes)
 		{
@@ -550,6 +534,29 @@ namespace TrustTeamVersion4.Data.Repositories
 			}
 
 			return table;
+		}
+
+		public int[] GetCategoryCount(IEnumerable<Home> homes)
+		{
+			List<string> categories = this.getSupportCallCategories();
+			int amountOfCategories = this.getSupportCallCategories().Count();
+			int[] amounts = new int[amountOfCategories];
+			int counter = 0;
+
+
+			categories.Sort();
+
+
+			foreach (var h in homes)
+			{
+				foreach (var c in categories)
+				{
+					int index = categories.IndexOf(c);
+					if (h.SupportCallCategory == c)
+						amounts[index]++;
+				}
+			}
+			return amounts;
 		}
 		#endregion
 

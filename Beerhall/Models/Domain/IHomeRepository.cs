@@ -24,9 +24,9 @@ namespace TrustTeamVersion4.Models.Domain
 		List<string> getInvoiceStatusses();
 		List<Home> Filter(Home home);
 		string[,] GetEfficiency(IEnumerable<Home> homes);
-		IEnumerable<IGrouping<string, string>> GetHoursWorkedOnUrgency(IEnumerable<Home> homes);
 		int GetAmountOfSetProperties(Home home);
 		int[,] GetIncidentenTable(IEnumerable<Home> homes);
 		IEnumerable<Home> RemoveNull(IEnumerable<Home> homes);
+		int[] GetCategoryCount(IEnumerable<Home> homes);
 	}
 }

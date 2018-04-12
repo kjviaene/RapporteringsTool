@@ -8,6 +8,7 @@ using TrustTeamVersion4.Models.Domain;
 
 namespace TrustteamVersion4.Models.Extension
 {
+
     public static class SessionExtensions
     {
 		//Het schrijven van een object naar een sessie
@@ -23,7 +24,7 @@ namespace TrustteamVersion4.Models.Extension
 		{
 			var value = session.GetString(key);
 			if (value == null)
-			{value = ""; }
+			{ return Enumerable.Empty<Home>(); }
 			return JsonConvert.DeserializeObject<IEnumerable<Home>>(value);
 		}
 

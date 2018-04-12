@@ -17,8 +17,12 @@ namespace TrustTeamVersion4.Models.Domain
 		private PropertyInfo[] _PropertyInfos = null;
 		private DateTime _tempDate = DateTime.MaxValue;
 		private DateTime _tempTime = DateTime.MaxValue;
-		// Alle kollom namen
+		
+		// Alle kolom namen
 		// De JsonProperty tag zorgt ervoor dat al deze properties worden geserialized. Anders krijg je gewoon een lege string na serialization. 
+		[JsonProperty]
+		[NotMapped]
+		public bool LastMonth { get; set; }
 		[JsonProperty]
 		[Display(Name = "Maand")]
 		public Double? Month { get; set; }
@@ -148,9 +152,6 @@ namespace TrustTeamVersion4.Models.Domain
 		[JsonProperty]
 		[Display(Name = "Hours clientele worked on suppor call")]
 		public string HoursClienteleWorkedOnSupportCall { get; set; }
-		[JsonProperty]
-		[NotMapped]
-		public bool LastMonth { get; set; }
 		#endregion
 		#region ToString
 		// Het aanpassen van de ToString zodanig deze alle properties returnt met steeds de waarde erbij in volgend formaat:
@@ -167,7 +168,7 @@ namespace TrustTeamVersion4.Models.Domain
 			foreach (var info in _PropertyInfos)
 			{
 				var value = info.GetValue(this, null) ?? "null";
-				if (!(value.Equals("null") | info.GetType() == typeof(bool)))
+				if (!(value.Equals("null")) & !(value.Equals(true)) & !(value.Equals(false)))
 				{
 					// Controle om te zorgen dat de DateTime niet sowieso wordt afgeprint omdat dit nooit null is maar wordt ingesteld op de 
 					// min en max waarde
@@ -250,7 +251,7 @@ namespace TrustTeamVersion4.Models.Domain
 			foreach (var prop in _PropertyInfos)
 			{
 				var value = prop.GetValue(this, null) ?? "null";
-				if (!(value.Equals("null")))
+				if (!(value.Equals("null")) & !(value.Equals(true)) & !(value.Equals(false)))
 				{
 					if (!(value.Equals(DateTime.MaxValue) | value.Equals(DateTime.MinValue)))
 					{
