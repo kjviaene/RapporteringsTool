@@ -13,6 +13,8 @@
 <h3>@ViewBag.filter</h3>
 
 @{
+	string[] xas = (string[])ViewData["EfficiencyString"];
+	double[] yas = (double[])ViewData["EfficiencyDouble"];
 	List<string> impacts = (List<string>)ViewData["Impacts"];
 	List<string> urgenties = (List<string>)ViewData["Urgenties"];
 	int[,] Priorities = (int[,])ViewData["Prioriteiten"];
@@ -53,22 +55,24 @@
 	}
 </table>
 <hr style="width: 100%; color: black; height: 3px; background-color:dimgrey;" />
-<div id="cat_chart" ></div>
+<div id="cat_chart"></div>
 <hr style="width: 100%; color: black; height: 3px; background-color:dimgrey;" />
-<div id="chart_div" ></div>
-@{
-	string[] xas = (string[])ViewData["EfficiencyString"];
-	double[] yas = (double[])ViewData["EfficiencyDouble"];
-	IEnumerable<IGrouping<string, string>> hoursWorked = (IEnumerable<IGrouping<string, string>>)ViewData["GroupedByUrgency"];
+<div id="incniv_chart"></div>
+<hr style="width: 100%; color: black; height: 3px; background-color:dimgrey;" />
+<div id="incnivStacked_chart" style="height: 100%;"></div>
+<hr style="width: 100%; color: black; height: 3px; background-color:dimgrey;" />
+<div id="chart_div"></div>
 
-}
+
 <script type="text/javascript">
 
 // Load the Visualization API and the corechart package.
-	google.charts.load('current', { 'packages': ['bar', 'corechart'] });
+	google.charts.load('current', { 'packages': ['corechart'] });
 	// Set a callback to run when the Google Visualization API is loaded.
 	google.charts.setOnLoadCallback(drawAmountPerCategory);
 	google.charts.setOnLoadCallback(drawEfficiency);
+	google.charts.setOnLoadCallback(drawIncNivStacked);
+	google.charts.setOnLoadCallback(drawIncNiv);
 
 	// Callback that creates and populates a data table,instantiates the pie chart, passes in the data and draws it.
 	function drawEfficiency() {
@@ -95,23 +99,21 @@
 		chart.draw(data, options);
 	}
 
-	function drawAmountPerCategory() {
+	function drawAmountPerCategory()
+	{
 
 		var data = new google.visualization.DataTable();
 
 		data.addColumn('string', 'Categorieën');
 		data.addColumn('number', 'Aantal');
-
-		@{ 
+		data.addColumn({ type: 'number', role: 'annotation' })
+		@{
 			for (var c = 0; c < categories.Count(); c++)
 			{
-				if(!(NrPerCategory[c] == 0))
+				if (!(NrPerCategory[c] == 0))
 				{ string categorie = categories[c];
-					if (categorie.Length > 20)
-					{
-						categorie = categorie.Substring(0, 20) + "...";
-					}
-					@:data.addRows([['@categorie',@NrPerCategory[c]]]);
+
+					@:data.addRows([['@categorie',@NrPerCategory[c],@NrPerCategory[c]]]);
 				}
 			}
 
@@ -120,16 +122,107 @@
 			title: 'Aantal tickets per categorie',
 			hAxis: {
 				title: 'Categorieën',
-				titleTextStyle: { color: 'black' },
-				count: -1,
-				viewWindowMode: 'pretty',
 				slantedText: true
+			},
+			chartArea: {
+				top: 28,
+				height: '40%',
+				width: '80%'
 			},
 			vAxis: {
 				title: 'Aantal'
 			},
+			legend: {position: 'none'}
 		};
-		var categorieChart = new google.charts.Bar(document.getElementById('cat_chart'));
+		var categorieChart = new google.visualization.ColumnChart(document.getElementById('cat_chart'));
+		categorieChart.draw(data, options);
+	}
+
+	function drawIncNiv()
+	{
+
+		var data = new google.visualization.DataTable();
+		data.addColumn('string', 'Soort incident');
+		data.addColumn('number', 'Aantal');
+		data.addColumn({ type: 'number', role: 'annotation' })
+
+		// Het kan niet geautomatiseerd worden omdat de P benamingen geen evenredig verband hebben met hun locatie, dus moet dit handmatig gebeuren
+		@*@{
+			for (var m = 1; m < impacts.Count(); m++)
+			{
+				for (var i = 1; i < urgenties.Count(); i++)
+				{
+
+					@:data.addRows([['P @i',@Priorities[m, i]]]);
+				}
+			}
+			}*@
+		data.addRows([['P1',@Priorities[1,1],@Priorities[1, 1]]]);
+		data.addRows([['P2',@Priorities[1,2] + @Priorities[2,1],@Priorities[1,2] + @Priorities[2,1]]]);
+		data.addRows([['P3',@Priorities[1,3] + @Priorities[2,2] + @Priorities[3,1],@Priorities[1,3] + @Priorities[2,2] + @Priorities[3,1]]]);
+		data.addRows([['P4',@Priorities[2,3] + @Priorities[2,4] + @Priorities[3,2] + @Priorities[3,3],@Priorities[2,3] + @Priorities[2,4] + @Priorities[3,2] + @Priorities[3,3]]]);
+		data.addRows([['P5',@Priorities[3,4],@Priorities[3, 4]]]);
+
+
+		var options = {
+			title: 'Aantal tickets per Incident niveau',
+			hAxis: {
+				title: 'Incident niveau',
+
+			},
+			vAxis: {
+				title: 'Aantal tickets'
+			},
+			chartArea: {
+				top: 28,
+				height: '40%',
+				width: '80%'
+			},
+			legend: { position: 'none' }
+		};
+
+
+		var categorieChart = new google.visualization.ColumnChart(document.getElementById('incniv_chart'));
+		categorieChart.draw(data, options);
+	}
+	function drawIncNivStacked()
+	{
+
+		var data = new google.visualization.DataTable();
+		data.addColumn('string', 'Impact');
+		data.addColumn('number', 'UnableToWork');
+		data.addColumn('number', 'CriticalBPU');
+		data.addColumn('number', 'NormalBPU');
+		data.addColumn('number', 'Workaround');
+		data.addColumn('number', 'SR');
+		data.addColumn('number', 'Not Set');
+		data.addColumn({ type: 'number', role: 'annotation' });
+
+		@{for (var m = 1; m < impacts.Count()+1; m++)
+			{
+				int som = Priorities[m, 1] + Priorities[m, 2] + Priorities[m, 3] + Priorities[m, 4] + Priorities[m, 5] + Priorities[m, 6];
+
+				@:data.addRows([['@impacts[m-1]', @Priorities[m, 1], @Priorities[m, 2], @Priorities[m, 3], @Priorities[m, 4], @Priorities[m, 5], @Priorities[m, 6], @som]]);
+
+			}
+		}
+
+
+		var options = {
+			title: 'Aantal tickets per Incident niveau',
+			isStacked: true,
+			vAxis: {
+				title: 'Aantal tickets'
+			},
+			chartArea: {
+				top: 28,
+				height: '70%',
+				width: '80%'
+			}
+		};
+
+
+		var categorieChart = new google.visualization.ColumnChart(document.getElementById('incnivStacked_chart'));
 		categorieChart.draw(data, options);
 	}
 
