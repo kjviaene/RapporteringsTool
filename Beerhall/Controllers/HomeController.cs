@@ -400,10 +400,10 @@ namespace TrustTeamVersion4.Controllers
 				imp = "NULL";
 			if (urg == "Not Set")
 				urg = "NULL";
-			if (_homesFiltered == null)
+			if (CheckInputMany(_homesFiltered))
 			{
 				_homesFiltered = HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
-				if (_homesFiltered == null)
+				if (CheckInputMany(_homesFiltered))
 				{
 					_homesFiltered = _homeRepository.GetAll();
 				}
