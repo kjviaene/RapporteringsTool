@@ -289,6 +289,9 @@ namespace TrustTeamVersion4.Controllers
 				// Het doorgeven van de gekozen filter als string aan de view via een ViewBag (zodat dit kan weergegeven worden)
 				ViewBag.filter = chosenFilter;
 
+				//Bijhouden van de filter
+				HttpContext.Session.SetObject<Home>("filter", filter);
+
 				// Bijhouden van gefilterde Home objecten
 				HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
 			}
@@ -316,12 +319,15 @@ namespace TrustTeamVersion4.Controllers
 				ViewBag.filter = chosenFilter;
 				// Het filteren van de data adhv de meegeven filter.
 				_homesFiltered = _homeRepository.Filter(filter);
+				//Bijhouden van de filter
+				HttpContext.Session.SetObject<Home>("filter", filter);
 				// Bijhouden van gefilterde Home objecten
 				HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
 			}
 			// Als er geen filter is meegegeven dan kijken we of er eentje in de session zit
 			else
 			{
+				ViewBag.filter = HttpContext.Session.GetObjectHome<Home>("filter").ToString(); ;
 				_homesFiltered = HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
 			}// Als er geen filter in de session zat dan tonen we charts over alle data in de DB
 			if (CheckInput(filter))
@@ -367,7 +373,6 @@ namespace TrustTeamVersion4.Controllers
 			ViewData["Urgenties"] = removeNullUrg;
 			ViewData["Prioriteiten"] = _homeRepository.GetIncidentenTable(_homesFiltered);
 			#endregion
-
 			#region Aantal per categorie
 			List<string> categories = _homeRepository.getSupportCallCategories();
 			int[] amounts = _homeRepository.GetCategoryCount(_homesFiltered);
@@ -378,6 +383,11 @@ namespace TrustTeamVersion4.Controllers
 			ViewData["Categories"] = categories;
 			ViewData["NrPerCategory"] = amounts;
 
+			#endregion
+			#region GroupTable
+			ViewData["uniqueGroups"] = _homeRepository.GetUniqueGroups(_homesFiltered);
+			ViewData["namesPerGroup"] = _homeRepository.GetPersonsPerGroup(_homesFiltered);
+			ViewData["allNames"] = _homeRepository.GetUniquePersonNames(_homesFiltered);
 			#endregion
 			return View(_homesFiltered);
 		}

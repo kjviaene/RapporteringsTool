@@ -1,4 +1,7 @@
 ﻿@model IEnumerable<TrustTeamVersion4.Models.Domain.Home>
+@using TrustTeamVersion4
+@using TrustTeamVersion4.Models
+@using TrustTeamVersion4.Models.Domain
 @{
 	ViewData["Title"] = "Graphs";
 	Layout = "~/Views/Shared/_Layout.cshtml";
@@ -20,6 +23,10 @@
 	int[,] Priorities = (int[,])ViewData["Prioriteiten"];
 	List<string> categories = (List<string>)ViewData["Categories"];
 	int[] NrPerCategory = (int[])ViewData["NrPerCategory"];
+	List<string> uniqueGroups = (List<string>)ViewData["uniqueGroups"];
+	List<string> allNames = (List<string>)ViewData["allNames"];
+	MultiKeyDictionary<string, string, int> namesPerGroup = (MultiKeyDictionary<string, string, int>)ViewData["namesPerGroup"];
+
 }
 
 <!-- De incidenten tabel. De eerste foreach loop overloopt alle urgenties om deze in de table header te plaatsen.
@@ -27,6 +34,7 @@
 	 In deze loop loopt nog een foreach loop die de rest van de kolommen aanvult met steeds het juiste aantal incidenten die daar thuis hoort.
 	 De waarden worden geïnitialiseerd op 1 omdat de 0,* en *,0 rijen niets bevatten. (zie HomeRepository voor de uitleg hieromtrent.
 	 De ActionLink roept de SlaFilter op van de HomeController en toont de tickets die werden geteld.-->
+
 <table class="table table-striped table-condensed table-bordered table-responsive table-hover">
 	<tr>
 		<th>Impact</th>
@@ -59,6 +67,8 @@
 		}
 	}
 </table>
+
+
 <!-- De div elementen bevatten elk een grafiek. De lijnen (hr) zijn puur voor wat overzicht op de pagina te creëren.-->
 <hr style="width: 100%; color: black; height: 3px; background-color:dimgrey;" />
 <div id="cat_chart"></div>
@@ -68,6 +78,46 @@
 <div id="incnivStacked_chart" style="height: 100%;"></div>
 <hr style="width: 100%; color: black; height: 3px; background-color:dimgrey;" />
 <div id="chart_div"></div>
+
+<!-- De tabel waar per groep staat hoeveel tickets een persoon heeft behandeld.-->
+
+<hr style="width: 100%; color: black; height: 3px; background-color:dimgrey;" />
+<h4>PIVOT</h4>
+<div>
+
+	@{
+		<table class="table table-condensed table-bordered table-responsive ">
+			@{int nr = 0; }
+
+			@{
+				foreach (var gr in uniqueGroups)
+				{
+					string id1 = ".group" + nr.ToString();
+					string id2 = "group" + nr.ToString();
+					<tr>
+						<th colspan="2" data-toggle="collapse" data-target="@id1" class="clickable">@gr</th>
+					</tr>
+					foreach (var n in allNames)
+					{
+						if (namesPerGroup.ContainsKey(gr, n))
+						{
+							<tr>
+								<td  class="collapse @id2 "> <i>@n </i> <i style="float: right;">@namesPerGroup[gr, n] </i></td>
+							</tr>
+						}
+					}
+
+					nr++;
+				}
+			}
+
+
+		</table>
+	}
+
+</div>
+<div><br /></div>
+<div>	<br /></div>
 
 <!-- Dit script tekent alle grafieken.-->
 <script type="text/javascript">
@@ -142,6 +192,7 @@
 			},
 			legend: {position: 'none'}
 		};
+		data.sort([{ column: 1, desc: true }]);
 		var categorieChart = new google.visualization.ColumnChart(document.getElementById('cat_chart'));
 		categorieChart.draw(data, options);
 	}
@@ -168,7 +219,7 @@
 		data.addRows([['P1',@Priorities[1,1],@Priorities[1, 1]]]);
 		data.addRows([['P2',@Priorities[1,2] + @Priorities[2,1],@Priorities[1,2] + @Priorities[2,1]]]);
 		data.addRows([['P3',@Priorities[1,3] + @Priorities[2,2] + @Priorities[3,1],@Priorities[1,3] + @Priorities[2,2] + @Priorities[3,1]]]);
-		data.addRows([['P4',@Priorities[2,3] + @Priorities[2,4] + @Priorities[3,2] + @Priorities[3,3],@Priorities[2,3] + @Priorities[2,4] + @Priorities[3,2] + @Priorities[3,3]]]);
+		data.addRows([['P4',@Priorities[2,3] + @Priorities[2,4] + @Priorities[3,2] + @Priorities[3,3] + @Priorities[1,4],@Priorities[2,3] + @Priorities[2,4] + @Priorities[3,2] + @Priorities[3,3] + @Priorities[1, 4]]]);
 		data.addRows([['P5',@Priorities[3,4],@Priorities[3, 4]]]);
 
 
@@ -199,11 +250,11 @@
 
 		var data = new google.visualization.DataTable();
 		data.addColumn('string', 'Impact');
-		data.addColumn('number', 'UnableToWork');
-		data.addColumn('number', 'CriticalBPU');
-		data.addColumn('number', 'NormalBPU');
-		data.addColumn('number', 'Workaround');
-		data.addColumn('number', 'SR');
+		data.addColumn('number', 'Unable to Work');
+		data.addColumn('number', 'Critical Business Process Unavailable');
+		data.addColumn('number', 'Normal Business Process Unavailable');
+		data.addColumn('number', 'Incident, but Workaround Available');
+		data.addColumn('number', 'Service Request');
 		data.addColumn('number', 'Not Set');
 		data.addColumn({ type: 'number', role: 'annotation' });
 
@@ -218,7 +269,7 @@
 
 
 		var options = {
-			title: 'Aantal tickets per Incident niveau',
+			title: 'Aantal tickets per Impact',
 			isStacked: true,
 			vAxis: {
 				title: 'Aantal tickets'

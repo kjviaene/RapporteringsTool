@@ -6,6 +6,7 @@ using TrustTeamVersion4.Models;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
 using System.Reflection;
+using System.Text;
 
 namespace TrustTeamVersion4.Data.Repositories
 {
@@ -541,8 +542,6 @@ namespace TrustTeamVersion4.Data.Repositories
 			List<string> categories = this.getSupportCallCategories();
 			int amountOfCategories = this.getSupportCallCategories().Count();
 			int[] amounts = new int[amountOfCategories];
-			int counter = 0;
-
 
 			categories.Sort();
 
@@ -557,6 +556,75 @@ namespace TrustTeamVersion4.Data.Repositories
 				}
 			}
 			return amounts;
+		}
+		// Hier wordt gebruik gemaakt van een nieuwe klasse 'MultiKeyDictionary'. Dit is een Dictionary die werkt met 2 keys.
+		// Eerst geprobeerd met 3D Array en list<list<list>>> maar waren op een bepaald moment niet geschikt voor gebruik. Arrays 
+		// gaven problemen door hun fixed length waardoor ze zeer veel white space hebben en de lists gaven problemen bij het itereren.
+		// Hier is de eerste key telkens de groep en de tweede de persoon. De value is dan het aantal tickets dat geteld wordt bij die persoon.
+		//
+		public MultiKeyDictionary<string, string, int> GetPersonsPerGroup(IEnumerable<Home> homes)
+		{
+			List<string> groups = GetUniqueGroups(homes);
+			List<string> names = GetUniquePersonNames(homes);
+			var result = new MultiKeyDictionary<string, string, int>();
+			int counter1 = 0;
+			foreach (var g in groups)
+			{
+				int counter2 = 0;
+				foreach (var n in names)
+				{
+					int counter3 = 0;
+					foreach (Home h in homes)
+					{
+						if (h.GroupName == g && h.PersonName == n)
+						{
+							counter3++;
+						}
+					}
+					if (counter3 > 0)
+					{
+						result.Add(g,n,counter3);
+					}
+					counter2++;
+				}
+				counter1++;
+
+			}
+			return result;
+		}
+		// Geeft de unieke groepen terug voor de meegegeven verzameling homes
+		public List<string> GetUniqueGroups(IEnumerable<Home> homes)
+		{
+		
+			
+			List<string> uniques = new List<string>();
+			foreach (Home h in homes)
+			{
+				if (!(h.GroupName == null | uniques.Exists(b => b == h.GroupName)))
+				{
+					uniques.Add(h.GroupName);
+				}
+			}
+			uniques.Sort();
+			return uniques;
+
+		}
+		// Geeft de unieke PersonNames terug voor de meegegeven verzameling homes
+		public List<string> GetUniquePersonNames(IEnumerable<Home> homes)
+		{
+
+
+			List<string> names = new List<string>();
+			foreach (Home n in homes)
+			{
+				if (!(n.PersonName == null | names.Exists(b => b == n.PersonName)))
+				{
+					names.Add(n.PersonName);
+				}
+			}
+			names.Sort();
+			return names;
+
 		}
 		#endregion
 
