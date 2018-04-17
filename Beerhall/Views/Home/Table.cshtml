@@ -53,36 +53,36 @@
 	@{ int counter = 1;
 		foreach (var item in Model)
 		{
-			<tr>
-				<td>@counter</td>
-				<td class="tbh_1_hide">@item.Number</td>
-				<td class="tbh_2_hide">@item.Month</td>
-				<td class="tbh_3_hide">@item.Year</td>
-				<td class="tbh_4_hide">@item.OrganizationNumber</td>
-				<td class="tbh_5_hide">@item.InvoicCenterOrganization</td>
-				<td class="tbh_6_hide">@item.GroupName</td>
-				<td class="tbh_7_hide">@item.PersonName</td>
-				<td class="tbh_8_hide">@item.SupportCallType</td>
-				<td class="tbh_9_hide">@item.SupportCallPriority</td>
-				<td class="tbh_10_hide">@item.SupportCallImpact</td>
-				<td class="tbh_11_hide">@item.SupportCallUrgency</td>
-				<td class="tbh_12_hide">@item.SupportCallStatus</td>
-				<td class="tbh_13_hide">@item.SupportCallCategory</td>
-				<td class="tbh_14_hide">@item.SupportCallOpenDate.ToShortDateString()</td>
-				<td class="tbh_15_hide">@item.SupportCallOpenTime.ToShortTimeString()</td>
-				<td class="tbh_16_hide">@item.SupportCallClosedDateNotNull.ToShortDateString()</td>
-				<td class="tbh_17_hide">@item.SupportCallClosedTimeNotNull.ToShortTimeString()</td>
-				<td class="tbh_18_hide">@item.HoursTillClosed</td>
-				<td class="tbh_19_hide">@item.HoursInStatusOpen</td>
-				<td class="tbh_20_hide">@item.HoursInvoiceCenter</td>
-				<td class="tbh_21_hide">@item.InvoiceCallSummary</td>
-				<td class="tbh_22_hide">@item.OpenedByUser</td>
-				<td class="tbh_23_hide">@item.AssignedToUser</td>
-				<td class="tbh_24_hide">@item.AssignedToQueue</td>
-				<td class="tbh_27_hide">@item.InvoiceOrganizationName</td>
-				<td class="tbh_28_hide">@item.InvoiceOrganizationNumber</td>
-				<td class="tbh_29_hide">@item.InvoiceStatus</td>
-			</tr>
+	<tr>
+		<td>@counter</td>		
+		<td class="tbh_1_hide">@item.Number</td>
+		<td class="tbh_2_hide">@item.Month</td>
+		<td class="tbh_3_hide">@item.Year</td>
+		<td class="tbh_4_hide">@item.OrganizationNumber</td>
+		<td class="tbh_5_hide">@item.InvoicCenterOrganization</td>
+		<td class="tbh_6_hide">@item.GroupName</td>
+		<td class="tbh_7_hide">@item.PersonName</td>
+		<td class="tbh_8_hide">@item.SupportCallType</td>
+		<td class="tbh_9_hide">@item.SupportCallPriority</td>
+		<td class="tbh_10_hide">@item.SupportCallImpact</td>
+		<td class="tbh_11_hide">@item.SupportCallUrgency</td>
+		<td class="tbh_12_hide">@item.SupportCallStatus</td>
+		<td class="tbh_13_hide">@item.SupportCallCategory</td>
+		<td class="tbh_14_hide">@item.SupportCallOpenDate.ToShortDateString()</td>
+		<td class="tbh_15_hide">@item.SupportCallOpenTime.ToShortTimeString()</td>
+		<td class="tbh_16_hide">@item.SupportCallClosedDateNotNull.ToShortDateString()</td>
+		<td class="tbh_17_hide">@item.SupportCallClosedTimeNotNull.ToShortTimeString()</td>
+		<td class="tbh_18_hide">@item.HoursTillClosed</td>
+		<td class="tbh_19_hide">@item.HoursInStatusOpen</td>
+		<td class="tbh_20_hide">@item.HoursInvoiceCenter</td>
+		<td class="tbh_21_hide">@item.InvoiceCallSummary</td>
+		<td class="tbh_22_hide">@item.OpenedByUser</td>
+		<td class="tbh_23_hide">@item.AssignedToUser</td>
+		<td class="tbh_24_hide">@item.AssignedToQueue</td>
+		<td class="tbh_27_hide">@item.InvoiceOrganizationName</td>
+		<td class="tbh_28_hide">@item.InvoiceOrganizationNumber</td>
+		<td class="tbh_29_hide">@item.InvoiceStatus</td>
+	</tr>
 
 			counter = counter + 1;
 		}

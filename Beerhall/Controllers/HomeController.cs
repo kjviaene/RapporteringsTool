@@ -313,12 +313,14 @@ namespace TrustTeamVersion4.Controllers
 			// Als er een filter is opgegeven dan voeren we de volgende stappen uit
 			if (!(filter.IsEmptyObject()))
 			{
-				// Het opslaan van de filter zodanig dit kan weergegeven worden boven de data
+
+				// Het filteren van de data adhv de meegeven filter.
+				_homesFiltered = _homeRepository.Filter(filter);     
+				// Het opslaan van de filter zodanig dit kan weergegeven worden boven de data. Dit moet na het filteren,
+				//dit omdat anders de data als "laatste maand" geselecteerd werd nog niet correct zijn.
 				chosenFilter = filter.ToString();
 				// Het doorgeven van de gekozen filter als string aan de view via een ViewBag (zodat dit kan weergegeven worden)
 				ViewBag.filter = chosenFilter;
-				// Het filteren van de data adhv de meegeven filter.
-				_homesFiltered = _homeRepository.Filter(filter);
 				//Bijhouden van de filter
 				HttpContext.Session.SetObject<Home>("filter", filter);
 				// Bijhouden van gefilterde Home objecten

@@ -86,28 +86,47 @@
 <div>
 
 	@{
-		<table class="table table-condensed table-bordered table-responsive ">
-			@{int nr = 0; }
+		<table class="table table-condensed table-bordered table-responsive table-striped table-hover ">
+			@{int nr = 0;
+				int counter = 0;}
 
 			@{
 				foreach (var gr in uniqueGroups)
 				{
 					string id1 = ".group" + nr.ToString();
 					string id2 = "group" + nr.ToString();
-					<tr>
-						<th colspan="2" data-toggle="collapse" data-target="@id1" class="clickable">@gr</th>
-					</tr>
+
+					foreach (var n in allNames)
+					{
+						if (namesPerGroup.ContainsKey(gr, n))
+						{
+							counter = counter + namesPerGroup[gr,n];
+						}
+					}
+					if (gr.Equals("NULL"))
+					{
+						<tr>
+							<th colspan="2" data-toggle="collapse" data-target="@id1" class="clickable danger">Not Set <b style="float: right;">@counter</b></th>
+						</tr>
+					}
+					else
+					{
+						<tr>
+							<th colspan="2" data-toggle="collapse" data-target="@id1" class="clickable info">@gr <b style="float: right;">@counter</b></th>
+						</tr>
+					}
 					foreach (var n in allNames)
 					{
 						if (namesPerGroup.ContainsKey(gr, n))
 						{
 							<tr>
-								<td  class="collapse @id2 "> <i>@n </i> <i style="float: right;">@namesPerGroup[gr, n] </i></td>
+								<td class="collapse @id2 "> <i>@n </i> <i style="float: right;">@namesPerGroup[gr, n] </i></td>
 							</tr>
 						}
 					}
 
 					nr++;
+					counter = 0;
 				}
 			}
 

@@ -223,6 +223,7 @@ namespace TrustTeamVersion4.Models.Domain
 			if (this.SupportCallClosedDate == null)
 			{
 				this.SupportCallClosedDateNotNull = DateTime.MinValue;
+				this.SupportCallClosedDate = DateTime.MinValue;
 			}
 			if(this.SupportCallClosedDate != null)
 			{
@@ -233,11 +234,24 @@ namespace TrustTeamVersion4.Models.Domain
 			{
 
 				this.SupportCallClosedTimeNotNull = DateTime.MaxValue;
+				this.SupportCallClosedTime = DateTime.MinValue;
 			}
 			if (this.SupportCallClosedTime != null)
 			{
 				this.SupportCallClosedTimeNotNull = (DateTime)this.SupportCallClosedTime;
 			}
+		}
+		// Zorgt ervoor dat alle double waarden niet null referentie zijn maar gewoon 0.
+		public void SetDoublesNotNull()
+		{
+			if (this.Year == null)
+				this.Year = 0;
+			if (this.Month == null)
+				this.Month = 0;
+			if (this.Number == null)
+				this.Number = 0;
+			if (this.InvoiceOrganizationNumber == null)
+				this.InvoiceOrganizationNumber = 0;
 		}
 
 		// Controle om te kijken of een instantie van dit object enkel nulls en de standaardwaarden voor de datums bevat. Maw, of dit object "leeg" is.
@@ -251,7 +265,7 @@ namespace TrustTeamVersion4.Models.Domain
 			foreach (var prop in _PropertyInfos)
 			{
 				var value = prop.GetValue(this, null) ?? "null";
-				if (!(value.Equals("null")) & !(value.Equals(true)) & !(value.Equals(false)))
+				if (!(value.Equals("null"))  & !(value.Equals(false)))
 				{
 					if (!(value.Equals(DateTime.MaxValue) | value.Equals(DateTime.MinValue)))
 					{
@@ -274,14 +288,14 @@ namespace TrustTeamVersion4.Models.Domain
 			foreach (var prop in _Properties)
 			{
 				this.SetDateNotNull();
-				if (prop.GetType() == typeof(string))
+				this.SetDoublesNotNull();
+				if (prop.GetValue(this) == null)
 				{
-					if (prop.GetValue(this, null) == null)
-						prop.SetValue(this, "NULL");
+					prop.SetValue(this, "NULL");
 				}
 			}
 		}
-
+		// Controleren of de bool LastMonth true is, zoja, dan worden de correcte properties ingesteld op de juiste data.
 		public void CheckAndSetLastMonth()
 		{ int substractMonth = -(1);
 			if (this.LastMonth)

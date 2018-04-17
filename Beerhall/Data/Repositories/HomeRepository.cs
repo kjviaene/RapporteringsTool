@@ -312,6 +312,8 @@ namespace TrustTeamVersion4.Data.Repositories
 							counter++;
 						if (home.SupportCallOpenDateEinde >= h.SupportCallOpenDate)
 							counter++;
+						if (home.LastMonth == true)
+							counter++;
 					}
 					// Als de counter identiek is aan het aantal properties dat werd ingesteld in de filter dan wordt deze toegevoegd aan de lijst van
 					// gefilterde objecten
@@ -412,131 +414,56 @@ namespace TrustTeamVersion4.Data.Repositories
 			int amountImpact = this.getSupportCallImpacts().Count();
 			int amountUrgency = this.getSupportCallUrgencies().Count();
 			// Table :
-			// Impact | IncidentNiv1   | IncidentNiv2   | IncidentNiv3   | IncidentNiv4
-			// Impact1|Interventiecat.1|Interventiecat.2|Interventiecat.3|Interventiecat.4|                 
-			// Impact2|Interventiecat.2|Interventiecat.3|Interventiecat.4|Interventiecat.4
-			// Impact3|Interventiecat.3|Interventiecat.4|Interventiecat.4|Interventiecat.5
-			// Impact4|Interventiecat.x|Interventiecat.x|Interventiecat.x|Interventiecat.x
-			// Dit komt dus overeen met de array, zo zullen table[0,0] ,table[0,*] en table [*,1] dus leeg blijven
+			// Impact | IncidentNiv1   | IncidentNiv2   | IncidentNiv3   | IncidentNiv4   |...
+			// Impact1|Interventiecat.1|Interventiecat.2|Interventiecat.3|Interventiecat.4|...              
+			// Impact2|Interventiecat.2|Interventiecat.3|Interventiecat.4|Interventiecat.4|...
+			// Impact3|Interventiecat.3|Interventiecat.4|Interventiecat.4|Interventiecat.5|...
+			// Impact4|Interventiecat.x|Interventiecat.x|Interventiecat.x|Interventiecat.x|...
+			// Dit komt dus overeen met de array, zo zullen table[0,0] ,table[0,*] en table [*,0] dus leeg blijven
 			// IncidentNiv komt overeen met SupportCallUrgency, impact met SupportCallImpact en Interventiecat. met SupportCallPriority
 
 			int[,] table = new int[amountImpact+1, amountUrgency+1];
 
 			foreach (var h in homes)
 			{
-				if (h.SupportCallImpact.StartsWith("1"))
+				h.RemoveNull();
+				for (var i = 1; i <= amountImpact; i++)
 				{
-					if (h.SupportCallUrgency.StartsWith("1"))
+					if (h.SupportCallImpact.StartsWith(i.ToString()))
 					{
-						table[1, 1]++;
+						for (var j = 1; j <= amountUrgency; j++)
+						{
+							if(h.SupportCallUrgency.StartsWith(j.ToString()))
+							{
+								table[i, j]++;
+							}
+							if (h.SupportCallUrgency.StartsWith("N") & j == amountUrgency)
+							{
+								table[i,j]++;
+							}
+						}
 					}
-					if (h.SupportCallUrgency.StartsWith("2"))
+					if (h.SupportCallImpact.StartsWith("N") & i == amountImpact)
 					{
-						table[1, 2]++;
-					}
-					if (h.SupportCallUrgency.StartsWith("3"))
-					{
-						table[1, 3]++;
-					}
-					if (h.SupportCallUrgency.StartsWith("4"))
-					{
-						table[1, 4]++;
-					}
-					if (h.SupportCallUrgency.StartsWith("5"))
-					{
-						table[1, 5]++;
-					}
-					if (h.SupportCallUrgency.StartsWith("N"))
-					{
-						table[1, 6]++;
+						for (var j = 1; j <= amountUrgency; j++)
+						{
+							if (h.SupportCallUrgency.StartsWith(j.ToString()))
+							{
+								table[i, j]++;
+							}
+							if (h.SupportCallUrgency.StartsWith("N") & j == amountUrgency)
+							{
+								table[i, j]++;
+							}
+						}
 					}
 				}
-				if (h.SupportCallImpact.StartsWith("2"))
-				{
-					if (h.SupportCallUrgency.StartsWith("1"))
-					{
-						table[2, 1]++;
-					}
-					if (h.SupportCallUrgency.StartsWith("2"))
-					{
-						table[2, 2]++;
-					}
-					if (h.SupportCallUrgency.StartsWith("3"))
-					{
-						table[2, 3]++;
-					}
-					if (h.SupportCallUrgency.StartsWith("4"))
-					{
-						table[2, 4]++;
-					}
-					if (h.SupportCallUrgency.StartsWith("5"))
-					{
-						table[2, 5]++;
-					}
-					if (h.SupportCallUrgency.StartsWith("N"))
-					{
-						table[2, 6]++;
-					}
-				}
-				if (h.SupportCallImpact.StartsWith("3"))
-				{
-					if (h.SupportCallUrgency.StartsWith("1"))
-					{
-						table[3, 1]++;
-					}
-					if (h.SupportCallUrgency.StartsWith("2"))
-					{
-						table[3, 2]++;
-					}
-					if (h.SupportCallUrgency.StartsWith("3"))
-					{
-						table[3, 3]++;
-					}
-					if (h.SupportCallUrgency.StartsWith("4"))
-					{
-						table[3, 4]++;
-					}
-					if (h.SupportCallUrgency.StartsWith("5"))
-					{
-						table[3, 5]++;
-					}
-					if (h.SupportCallUrgency.StartsWith("N"))
-					{
-						table[3, 6]++;
-					}
-				}
-				if (h.SupportCallImpact.Equals("NULL"))
-				{
-					if (h.SupportCallUrgency.StartsWith("1"))
-					{
-						table[4, 1]++;
-					}
-					if (h.SupportCallUrgency.StartsWith("2"))
-					{
-						table[4, 2]++;
-					}
-					if (h.SupportCallUrgency.StartsWith("3"))
-					{
-						table[4, 3]++;
-					}
-					if (h.SupportCallUrgency.StartsWith("4"))
-					{
-						table[4, 4]++;
-					}
-					if (h.SupportCallUrgency.StartsWith("5"))
-					{
-						table[4, 5]++;
-					}
-					if (h.SupportCallUrgency.StartsWith("N"))
-					{
-						table[4, 6]++;
-					}
-				}
+			
 			}
 
 			return table;
 		}
-
+		// Telt de frequentie van elke categorie in een verzameling van objecten
 		public int[] GetCategoryCount(IEnumerable<Home> homes)
 		{
 			List<string> categories = this.getSupportCallCategories();
