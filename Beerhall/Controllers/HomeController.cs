@@ -6,7 +6,16 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
 using TrustteamVersion4.Models.Extension;
 using Newtonsoft.Json;
-
+using OfficeOpenXml;
+using System.Reflection;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Hosting;
+using System.Threading.Tasks;
+using System.IO;
+using NPOI.SS.UserModel;
+using NPOI.XSSF.UserModel;
+using System.Data;
+using System.ComponentModel;
 
 namespace TrustTeamVersion4.Controllers
 {
@@ -14,8 +23,10 @@ namespace TrustTeamVersion4.Controllers
 	{
 		#region Properties
 		private readonly IHomeRepository _homeRepository;
+		private IHostingEnvironment _hostingEnvironment;
 		private static String chosenFilter;
-		Home home = new Home();
+		private const string XlsxContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+		Home _home = new Home();
 		IEnumerable<Home> homes;
 		[JsonProperty]
 		IEnumerable<Home> _homesFiltered = Enumerable.Empty<Home>();
@@ -23,9 +34,10 @@ namespace TrustTeamVersion4.Controllers
 		IEnumerable<Home> _EmptyEnumerable = Enumerable.Empty<Home>();
 		#endregion
 		#region Constructor
-		public HomeController(IHomeRepository homeRepository)
+		public HomeController(IHomeRepository homeRepository, IHostingEnvironment env)
 		{
 			_homeRepository = homeRepository;
+			_hostingEnvironment = env;
 		}
 		#endregion
 		#region Index
@@ -431,8 +443,60 @@ namespace TrustTeamVersion4.Controllers
 			}
 			return View("Table",_SlaPriorities);
 		}
-#endregion
+		#endregion
+		#region Export Excel
+		#endregion
+		public IActionResult Export()
+		{
+			_homesFiltered = (IEnumerable<Home>)HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
+			var dataTable = new DataTable("data");
+			dataTable = _homesFiltered.ToDataTable<Home>();
 
+			using (var package = new ExcelPackage())
+			{
+				var worksheet = package.Workbook.Worksheets.Add("Excel Test");
+				worksheet.Cells["A1"].LoadFromDataTable(dataTable, PrintHeaders: true);
+				for (var col = 1; col < dataTable.Columns.Count + 1; col++)
+				{
+					worksheet.Column(col).AutoFit();
+				}
+				return File(package.GetAsByteArray(), XlsxContentType, "report.xlsx");
+			}
+			#region old
+			//ExcelPackage pck = new ExcelPackage();
+			////Add a new ExcelSheet
+			//ExcelWorksheet ws = pck.Workbook.Worksheets.Add("Rapport");
+			//List<string> propsString = _home.getProperties();
+			//PropertyInfo[] props = _home.GetProperties();
+			//string[] columnHeaders = this.AlphabeticalColumns(propsString.Count());
+			//int counter = 0;
+			//IEnumerable<Home> data = _homesFiltered;
+			//foreach (var pr in propsString)
+			//{
+			//	ws.Cells[columnHeaders[counter] + "1"].Value = pr.ToString();
+			//	counter++;
+			//}
+			//int rowStart = 2;
+			//foreach (var item in data)
+			//{
+			//	int columnCounter = 1;
+			//	foreach (var pr in props)
+			//	{
+			//		ws.Cells[string.Format("{0}{1}", columnHeaders[columnCounter], rowStart)].Value = pr.GetValue(item);
+			//		columnCounter++;
+			//	}
+			//	rowStart++;
+			//}
+			//ws.Cells["A:ZZ"].AutoFitColumns();
+			//Response.Clear();
+			//Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+			// Response.AddHeader("content-disposition","attachment: filename=" + "ExcelReport.xlsx");
+			//Response.BinaryWrite(pck.GetAsByteArray());
+			//Response.end();
+			#endregion
+		}
+
+		
 		#region methods
 		public void SetViewDataIndex() {
 			// Creatie van de mogelijke keuzes waar men op kan filteren. Deze worden uit de databank gehaald, zo blijft de dropdown altijd 
@@ -480,6 +544,26 @@ namespace TrustTeamVersion4.Controllers
 			{
 				return false;
 			}
+		}
+		// Een methode die een array vult met kolom headers zoals in excel, het eerste lement is A, het laatste zal ZZ zijn.
+		public string[] AlphabeticalColumns(int amount)
+		{
+			int counter = 0;
+			int counter2 = 0;
+			string pre = "";
+			string[] value = new string[amount];
+			string[] alphabet = new[] { "A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"};
+			for (int i = 0; i <= amount; i++)
+			{
+				value.Append(pre + alphabet[i-counter2]);
+				if (i == alphabet.Count()-1)
+				{
+					pre = alphabet[counter];
+					counter++;
+					counter2 = counter2 + alphabet.Count();
+				}
+			}
+			return alphabet;
 		}
 		#endregion
 	}

@@ -202,17 +202,16 @@ namespace TrustTeamVersion4.Models.Domain
 		}
 		#endregion
 		#region Other methods
-		// Het retournenen van alle attributen als strings in een lijst
-		public SelectList getAttributen() {
-			List<String> temp = new List<String>();
+		// Het retournenen van alle properties als strings in een lijst
+		public List<string> getProperties() {
+			List<string> temp = new List<String>();
 			var properties = this.GetType().GetProperties();
 			foreach (var info in properties)
 			{
 				temp.Add(info.Name);
 			}
-
-			SelectList result = new SelectList(temp);
-			return result;
+			
+			return temp;
 		}
 		// Deze methode is er puur om te zorgen dat we een property hebben waar we de closed data vinden waar die nooit null kan zijn. Ze wordt ingesteld op de
 		// maximum waarde van DateTime in de plaats als ze null is, zo is ze wel nog steeds gemakkelijk te onderscheiden van de rest.
@@ -303,6 +302,14 @@ namespace TrustTeamVersion4.Models.Domain
 				this.SupportCallOpenDate = DateTime.Now.AddMonths(substractMonth);
 				this.SupportCallOpenDateEinde = DateTime.Now;
 			}
+		}
+
+		public PropertyInfo[] GetProperties()
+		{
+			PropertyInfo[] value = this.GetType().GetProperties();
+
+			return value;
+
 		}
 		#endregion
 	}
