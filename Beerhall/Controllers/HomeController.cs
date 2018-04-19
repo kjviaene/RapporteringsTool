@@ -16,6 +16,12 @@ using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using System.Data;
 using System.ComponentModel;
+using System.Web.Mvc;
+//using Rotativa.AspNetCore;
+//using Rotativa.AspNetCore.Options;
+using Rotativa.NetCore;
+using DinkToPdf;
+using TrustteamVersion4.Models.ViewModels;
 
 namespace TrustTeamVersion4.Controllers
 {
@@ -27,11 +33,12 @@ namespace TrustTeamVersion4.Controllers
 		private static String chosenFilter;
 		private const string XlsxContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 		Home _home = new Home();
-		IEnumerable<Home> homes;
+		Home _filter = new Home();
 		[JsonProperty]
 		IEnumerable<Home> _homesFiltered = Enumerable.Empty<Home>();
 		IEnumerable<Home> _homesSorted = Enumerable.Empty<Home>();
 		IEnumerable<Home> _EmptyEnumerable = Enumerable.Empty<Home>();
+		
 		#endregion
 		#region Constructor
 		public HomeController(IHomeRepository homeRepository, IHostingEnvironment env)
@@ -325,7 +332,7 @@ namespace TrustTeamVersion4.Controllers
 			// Als er een filter is opgegeven dan voeren we de volgende stappen uit
 			if (!(filter.IsEmptyObject()))
 			{
-
+			#region toepassen filter en controle filter
 				// Het filteren van de data adhv de meegeven filter.
 				_homesFiltered = _homeRepository.Filter(filter);     
 				// Het opslaan van de filter zodanig dit kan weergegeven worden boven de data. Dit moet na het filteren,
@@ -341,69 +348,19 @@ namespace TrustTeamVersion4.Controllers
 			// Als er geen filter is meegegeven dan kijken we of er eentje in de session zit
 			else
 			{
-				ViewBag.filter = HttpContext.Session.GetObjectHome<Home>("filter").ToString(); ;
+				_filter = HttpContext.Session.GetObjectHome<Home>("filter"); ;
 				_homesFiltered = HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
-			}// Als er geen filter in de session zat dan tonen we charts over alle data in de DB
-			if (CheckInput(filter))
+			}// Als er geen filter in de session zat dan tonen we terug de index pagina met een melding
+			if (CheckInput(_filter))
 			{
 				SetViewDataIndex();
 				return View("Index");
 			}
-			#region PieChart1
-			int counter = 0;
-			string[,] efficiency = _homeRepository.GetEfficiency(_homesFiltered);
-			for (var g = 0; g < efficiency.Length / 2; g++)
-			{
-				if (!(efficiency[g, 0] == null))
-				{
-					counter++;
-				}
-			}
-
-			string[] tempString = new string[counter];
-			double[] tempNumber = new double[counter];
-			for (var k = 0; k < counter; k++)
-			{
-				tempString[k] = efficiency[k, 0];
-				tempNumber[k] = Int32.Parse(efficiency[k, 1]);
-			}
-			ViewData["Bedrijf"] = filter.InvoicCenterOrganization;
-			ViewData["EfficiencyString"] = tempString;
-			ViewData["EfficiencyDouble"] = tempNumber;
 			#endregion
-			#region IncidentenTabel
-			// Het aanpassen van de NULL string naar Not Set omdat het mooier oogt in de tabel
-			List<string> removeNullImp = _homeRepository.getSupportCallImpacts();
-			int index = removeNullImp.IndexOf("NULL");
-			if (index != -1)
-				removeNullImp[index] = "Not Set";
-			List<string> removeNullUrg = _homeRepository.getSupportCallUrgencies();
-			int index2 = removeNullUrg.IndexOf("NULL");
-			if (index2 != -1)
-				removeNullUrg[index2] = "Not Set";
-			// Verzamelen van alle nodige data voor de tabel samen te steken (mogelijke impacts, mogelijke urgenties en de totale aantal per categorie
-
-			ViewData["Impacts"] = removeNullImp;
-			ViewData["Urgenties"] = removeNullUrg;
-			ViewData["Prioriteiten"] = _homeRepository.GetIncidentenTable(_homesFiltered);
-			#endregion
-			#region Aantal per categorie
-			List<string> categories = _homeRepository.getSupportCallCategories();
-			int[] amounts = _homeRepository.GetCategoryCount(_homesFiltered);
-
-			categories.Sort();
-
-
-			ViewData["Categories"] = categories;
-			ViewData["NrPerCategory"] = amounts;
-
-			#endregion
-			#region GroupTable
-			ViewData["uniqueGroups"] = _homeRepository.GetUniqueGroups(_homesFiltered);
-			ViewData["namesPerGroup"] = _homeRepository.GetPersonsPerGroup(_homesFiltered);
-			ViewData["allNames"] = _homeRepository.GetUniquePersonNames(_homesFiltered);
-			#endregion
-			return View(_homesFiltered);
+			// Het aanmaken van een ViewModel nu we zeker zijn dat  _filter niet null is.
+			GraphsViewModel temp1 = new GraphsViewModel(_homeRepository, _homesFiltered, _filter);
+			// doorgeven ViewModel aan de View
+			return View(temp1);
 		}
 		#endregion
 		#region Reset method
@@ -445,7 +402,6 @@ namespace TrustTeamVersion4.Controllers
 		}
 		#endregion
 		#region Export Excel
-		#endregion
 		public IActionResult Export()
 		{
 			_homesFiltered = (IEnumerable<Home>)HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
@@ -462,40 +418,8 @@ namespace TrustTeamVersion4.Controllers
 				}
 				return File(package.GetAsByteArray(), XlsxContentType, "report.xlsx");
 			}
-			#region old
-			//ExcelPackage pck = new ExcelPackage();
-			////Add a new ExcelSheet
-			//ExcelWorksheet ws = pck.Workbook.Worksheets.Add("Rapport");
-			//List<string> propsString = _home.getProperties();
-			//PropertyInfo[] props = _home.GetProperties();
-			//string[] columnHeaders = this.AlphabeticalColumns(propsString.Count());
-			//int counter = 0;
-			//IEnumerable<Home> data = _homesFiltered;
-			//foreach (var pr in propsString)
-			//{
-			//	ws.Cells[columnHeaders[counter] + "1"].Value = pr.ToString();
-			//	counter++;
-			//}
-			//int rowStart = 2;
-			//foreach (var item in data)
-			//{
-			//	int columnCounter = 1;
-			//	foreach (var pr in props)
-			//	{
-			//		ws.Cells[string.Format("{0}{1}", columnHeaders[columnCounter], rowStart)].Value = pr.GetValue(item);
-			//		columnCounter++;
-			//	}
-			//	rowStart++;
-			//}
-			//ws.Cells["A:ZZ"].AutoFitColumns();
-			//Response.Clear();
-			//Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-			// Response.AddHeader("content-disposition","attachment: filename=" + "ExcelReport.xlsx");
-			//Response.BinaryWrite(pck.GetAsByteArray());
-			//Response.end();
-			#endregion
 		}
-
+		#endregion
 		
 		#region methods
 		public void SetViewDataIndex() {
@@ -566,5 +490,18 @@ namespace TrustTeamVersion4.Controllers
 			return alphabet;
 		}
 		#endregion
+
+		public IActionResult test()
+		{
+			SetViewDataIndex();
+			_filter = HttpContext.Session.GetObjectHome<Home>("filter"); ;
+			_homesFiltered = HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
+			GraphsViewModel temp2 = new GraphsViewModel(_homeRepository,_homesFiltered,_filter);
+
+			return new ViewAsPdf("Graphs",temp2);
+		}
 	}
+
+
+
 }

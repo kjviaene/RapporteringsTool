@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using TrustTeamVersion4.Data.Repositories;
 using TrustTeamVersion4.Models.Domain;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Rotativa.AspNetCore;
 
 namespace TrustTeamVersion4
 {

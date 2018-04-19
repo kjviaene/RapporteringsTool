@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Reflection;
 using System.Text;
+using TrustteamVersion4.Models.Extension;
 
 namespace TrustTeamVersion4.Models.Domain
 {
@@ -20,8 +21,10 @@ namespace TrustTeamVersion4.Models.Domain
 		
 		// Alle kolom namen
 		// De JsonProperty tag zorgt ervoor dat al deze properties worden geserialized. Anders krijg je gewoon een lege string na serialization. 
+		// De NoPrintAttribute tag zorgt ervoor dat deze property niet in de excel wordt weergegeven.
 		[JsonProperty]
 		[NotMapped]
+		[NoPrintAttribute]
 		public bool LastMonth { get; set; }
 		[JsonProperty]
 		[Display(Name = "Maand")]
@@ -75,6 +78,7 @@ namespace TrustTeamVersion4.Models.Domain
 		// De tag "NotMapped" is er omdat anders SQL een error geeft aangezien er geen gelijknamige kolom bestaat in de databank
 		// Deze property is echter vereist als we met deze data willen werken (uitleg zie onderaan)
 		[JsonProperty]
+		[NoPrintAttribute]
 		[NotMapped]
 		public DateTime SupportCallClosedDateNotNull {
 
@@ -96,6 +100,7 @@ namespace TrustTeamVersion4.Models.Domain
 		// De tag "NotMapped" is er omdat anders SQL een error geeft aangezien er geen gelijknamige kolom bestaat in de databank
 		// Deze property is echter vereist als we met deze data willen werken (uitleg zie onderaan)
 		[JsonProperty]
+		[NoPrintAttribute]
 		[NotMapped]
 		public DateTime SupportCallClosedTimeNotNull
 		{

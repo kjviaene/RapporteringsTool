@@ -1,5 +1,5 @@
 
-Verwijderde if statement
+Verwijderde if statement voor het filteren op properties
 ```
 //if (!(home.Month.HasValue) | home.Month.Equals(h.Month))
 //{
@@ -220,4 +220,38 @@ Vroegere manier van incidenten tabel tellen
 			//			table[5, 6]++;
 			//		}
 			//	}
+```
+Probeersel voor het printen van de tabel in excel
+```
+
+			//ExcelPackage pck = new ExcelPackage();
+			////Add a new ExcelSheet
+			//ExcelWorksheet ws = pck.Workbook.Worksheets.Add("Rapport");
+			//List<string> propsString = _home.getProperties();
+			//PropertyInfo[] props = _home.GetProperties();
+			//string[] columnHeaders = this.AlphabeticalColumns(propsString.Count());
+			//int counter = 0;
+			//IEnumerable<Home> data = _homesFiltered;
+			//foreach (var pr in propsString)
+			//{
+			//	ws.Cells[columnHeaders[counter] + "1"].Value = pr.ToString();
+			//	counter++;
+			//}
+			//int rowStart = 2;
+			//foreach (var item in data)
+			//{
+			//	int columnCounter = 1;
+			//	foreach (var pr in props)
+			//	{
+			//		ws.Cells[string.Format("{0}{1}", columnHeaders[columnCounter], rowStart)].Value = pr.GetValue(item);
+			//		columnCounter++;
+			//	}
+			//	rowStart++;
+			//}
+			//ws.Cells["A:ZZ"].AutoFitColumns();
+			//Response.Clear();
+			//Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+			// Response.AddHeader("content-disposition","attachment: filename=" + "ExcelReport.xlsx");
+			//Response.BinaryWrite(pck.GetAsByteArray());
+			//Response.end();
 ```

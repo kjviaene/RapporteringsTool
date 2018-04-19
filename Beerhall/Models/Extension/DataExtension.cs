@@ -13,23 +13,25 @@ namespace TrustteamVersion4.Models.Extension
 		// Dit is een extension method. Het fungeert als een extra methode op een bepaald Type (hier IEnumerable)
 		public static DataTable ToDataTable<T>(this IEnumerable<T> items)
 		{
-			// Verzamelen van alle properties van het meegegeven type (en het aanmaken van een DataTable)     
+			// Verzamelen van alle properties van het meegegeven type (en het aanmaken van een DataTable). Hier gebruiken we onze eigen
+			// gedefinieerde methode van GetProperties zodanig de properties die niet in de database voorkomen ook niet in de excel
+			// worden weergegeven (zoals Boolean LastMonth)
 			DataTable table = new DataTable(typeof(T).Name);
-			PropertyInfo[] props = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+			PropertyInfo[] props = typeof(T).GetFilteredProperties();
 
-			// Add the properties as columns to the datatable
+			// Toevoegen van de properties aan de kolommen van de DataTable
 			foreach (var prop in props)
 			{
 				Type propType = prop.PropertyType;
 
-				// Is it a nullable type? Get the underlying type 
+				// Als een property Nullable is, dan voegen we de "underlying type" toe, hetzelfde type dus maar niet nullable
 				if (propType.IsGenericType && propType.GetGenericTypeDefinition().Equals(typeof(Nullable<>)))
 					propType = new NullableConverter(propType).UnderlyingType;
 				if (propType != typeof(bool) | propType.Name.Equals("SupportCallClosedDateNotNull") | propType.Name.Equals("SupportCallClosedTimeNotNull"))
 					table.Columns.Add(prop.Name, propType);
 			}
 
-			// Add the property values per T as rows to the datatable
+			// Toevoegen van de elk object zijn values aan de rijen
 			foreach (var item in items)
 			{
 				var values = new object[props.Length];
@@ -44,5 +46,14 @@ namespace TrustteamVersion4.Models.Extension
 			return table;
 		}
 
+		// Methode als extension op PropertyInfo, deze laat de properties met Attribute "NoPrintAttribute" links liggen
+		public static PropertyInfo[] GetFilteredProperties(this Type type)
+		{
+			return type.GetProperties().Where(pi => pi.GetCustomAttributes(typeof(NoPrintAttribute), true).Length == 0).ToArray();
+		}
+
 	}
 }
+
+// source for Everything but the "GetFilteredProperties" :
+// https://github.com/JanKallman/EPPlus

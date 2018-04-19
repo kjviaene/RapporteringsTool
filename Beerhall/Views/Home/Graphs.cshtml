@@ -1,7 +1,8 @@
-﻿@model IEnumerable<TrustTeamVersion4.Models.Domain.Home>
+﻿@model TrustteamVersion4.Models.ViewModels.GraphsViewModel
 @using TrustTeamVersion4
 @using TrustTeamVersion4.Models
 @using TrustTeamVersion4.Models.Domain
+@using TrustteamVersion4.Models.ViewModels
 @{
 	ViewData["Title"] = "Graphs";
 	Layout = "~/Views/Shared/_Layout.cshtml";
@@ -14,18 +15,21 @@
 <!-- Titel en de gekozen filter-->
 <h2>Graphs</h2>
 <h3>@ViewBag.filter</h3>
+<div class="btn btn-default">
+	<a asp-action="test" asp-controller="Home"><img src="~/images/pdf.png" width="40" /></a>
+</div>
 <!-- Alle variabelen die nodig zijn voor de verschillende grafieken. Ze worden steeds uit de ViewData gehaald en in een variabele geplaatst omdat dit anders soms voor problemen zorgt-->
 @{
-	string[] xas = (string[])ViewData["EfficiencyString"];
-	double[] yas = (double[])ViewData["EfficiencyDouble"];
-	List<string> impacts = (List<string>)ViewData["Impacts"];
-	List<string> urgenties = (List<string>)ViewData["Urgenties"];
-	int[,] Priorities = (int[,])ViewData["Prioriteiten"];
-	List<string> categories = (List<string>)ViewData["Categories"];
-	int[] NrPerCategory = (int[])ViewData["NrPerCategory"];
-	List<string> uniqueGroups = (List<string>)ViewData["uniqueGroups"];
-	List<string> allNames = (List<string>)ViewData["allNames"];
-	MultiKeyDictionary<string, string, int> namesPerGroup = (MultiKeyDictionary<string, string, int>)ViewData["namesPerGroup"];
+	string[] xas = Model.EfficiencyString;
+	double[] yas = Model.EfficiencyDouble;
+	List<string> impacts = Model.impacts;
+	List<string> urgenties = Model.urgenties;
+	int[,] Priorities = Model.prioriteiten;
+	List<string> categories = Model.Categories;
+	int[] NrPerCategory = Model.NrPerCategory;
+	List<string> uniqueGroups = Model.uniqueGroups;
+	List<string> allNames = Model.allNames;
+	MultiKeyDictionary<string, string, int> namesPerGroup = Model.namesPerGroup;
 
 }
 
@@ -100,7 +104,7 @@
 					{
 						if (namesPerGroup.ContainsKey(gr, n))
 						{
-							counter = counter + namesPerGroup[gr,n];
+							counter = counter + namesPerGroup[gr, n];
 						}
 					}
 					if (gr.Equals("NULL"))
