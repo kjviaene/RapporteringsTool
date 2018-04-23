@@ -494,7 +494,9 @@ namespace TrustTeamVersion4.Data.Repositories
 		public MultiKeyDictionary<string, string, int> GetPersonsPerGroup(IEnumerable<Home> homes)
 		{
 			List<string> groups = GetUniqueGroups(homes);
+			groups.Add("");
 			List<string> names = GetUniquePersonNames(homes);
+			names.Add("");
 			var result = new MultiKeyDictionary<string, string, int>();
 			int counter1 = 0;
 			foreach (var g in groups)
@@ -505,6 +507,7 @@ namespace TrustTeamVersion4.Data.Repositories
 					int counter3 = 0;
 					foreach (Home h in homes)
 					{
+						h.RemoveNull();
 						if (h.GroupName == g && h.PersonName == n)
 						{
 							counter3++;

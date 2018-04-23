@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore;
 using TrustTeamVersion4.Models.Domain;
 using System.Collections.Generic;
 using System.Linq;
@@ -326,9 +327,9 @@ namespace TrustTeamVersion4.Controllers
 		}
 		#endregion
 		#region Graphs method
-		public IActionResult Graphs(Home filter)
+		public IActionResult Graphs(Home filter, GraphsViewModel model)
 		{
-			
+			GraphsViewModel temp1 = model;
 			// Als er een filter is opgegeven dan voeren we de volgende stappen uit
 			if (!(filter.IsEmptyObject()))
 			{
@@ -358,7 +359,8 @@ namespace TrustTeamVersion4.Controllers
 			}
 			#endregion
 			// Het aanmaken van een ViewModel nu we zeker zijn dat  _filter niet null is.
-			GraphsViewModel temp1 = new GraphsViewModel(_homeRepository, _homesFiltered, _filter);
+			if (temp1.isNullObject())
+				temp1 = new GraphsViewModel(_homeRepository, _homesFiltered, _filter);
 			// doorgeven ViewModel aan de View
 			return View(temp1);
 		}
@@ -491,14 +493,16 @@ namespace TrustTeamVersion4.Controllers
 		}
 		#endregion
 
-		public IActionResult test()
+		public IActionResult PrintPdf()
 		{
 			SetViewDataIndex();
 			_filter = HttpContext.Session.GetObjectHome<Home>("filter"); ;
 			_homesFiltered = HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
 			GraphsViewModel temp2 = new GraphsViewModel(_homeRepository,_homesFiltered,_filter);
 
-			return new ViewAsPdf("Graphs",temp2);
+			//return new ActionAsPdf("Graphs", temp2);
+
+			return new ViewAsPdf("Graphs", temp2) { CustomSwitches = "--no-stop-slow-scripts --javascript-delay 5000 --window-status ready --no-pdf-compression" };
 		}
 	}
 

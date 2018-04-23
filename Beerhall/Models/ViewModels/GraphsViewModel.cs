@@ -26,6 +26,10 @@ namespace TrustteamVersion4.Models.ViewModels
 		private List<string> _RemoveNullImp;
 		private List<string> _RemoveNullUrg;
 
+		public GraphsViewModel()
+		{
+
+		}
 		public GraphsViewModel(IHomeRepository repo, IEnumerable<Home> filtered, Home filter)
 		{
 			#region Injectie
@@ -94,7 +98,22 @@ namespace TrustteamVersion4.Models.ViewModels
 			#endregion
 		}
 
+		#region Methods
+		public bool isNullObject() {
+			int counter = 0;
+			var properties = this.GetType().GetProperties();
+			foreach (var p in properties)
+			{
+				if (p.GetValue(this) == null)
+					counter++;
 
+			}
+			if (counter == properties.Length)
+				return true;
+			else
+				return false;
+		}
+		#endregion
 
 
 	}

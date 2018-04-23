@@ -38,6 +38,7 @@ namespace TrustTeamVersion4
             {
                 app.UseDeveloperExceptionPage();
                 app.UseBrowserLink();
+				RotativaConfiguration.Setup(env);
             }
             else
             {
