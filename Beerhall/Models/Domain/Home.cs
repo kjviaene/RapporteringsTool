@@ -18,6 +18,8 @@ namespace TrustTeamVersion4.Models.Domain
 		private PropertyInfo[] _PropertyInfos = null;
 		private DateTime _tempDate = DateTime.MaxValue;
 		private DateTime _tempTime = DateTime.MaxValue;
+		private string _groupNameNotNull = "";
+		private string _personNameNotNull = "";
 		
 		// Alle kolom namen
 		// De JsonProperty tag zorgt ervoor dat al deze properties worden geserialized. Anders krijg je gewoon een lege string na serialization. 
@@ -40,7 +42,7 @@ namespace TrustTeamVersion4.Models.Domain
 		public string InvoicCenterOrganization { get; set; }
 		[JsonProperty]
 		[Display(Name = "Groep naam")]
-		public string GroupName { get; set; }
+		public string GroupName { get; set;	}
 		[JsonProperty]
 		[Display(Name = "Naam persoon")]
 		public string PersonName { get; set; }

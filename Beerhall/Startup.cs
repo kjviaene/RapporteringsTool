@@ -38,7 +38,6 @@ namespace TrustTeamVersion4
             {
                 app.UseDeveloperExceptionPage();
                 app.UseBrowserLink();
-				RotativaConfiguration.Setup(env);
             }
             else
             {
@@ -53,7 +52,8 @@ namespace TrustTeamVersion4
                     name: "default",
                     template: "{controller=Home}/{action=Index}/{id?}/{name?}");
             });
-			
-        }
+
+			RotativaConfiguration.Setup(env);
+		}
     }
 }

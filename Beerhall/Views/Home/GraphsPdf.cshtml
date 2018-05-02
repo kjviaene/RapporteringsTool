@@ -32,6 +32,7 @@
 	<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 	<!-- Dit script tekent alle grafieken.-->
 	<script type="text/javascript">
+		//debugger;
 // Load the Visualization API and the corechart package.
 	google.charts.load('current', { 'packages': ['corechart'] });
 	// Set a callback to run when the Google Visualization API is loaded. (Het oproepen van elke teken function)
@@ -67,8 +68,13 @@
 		// voor in het geval dat de draw function te snel zou uitgevoerd worden zodanig de Listener in een state zou kunnen terecht komen waar hij
 		// nooit het ready signaal krijgt (aangezien de draw functie deze al reeds zou gestuurd hebben en dit niet opnieuw doet)
 
-		var chart = new google.visualization.PieChart(document.getElementById('chart_div'));
-		google.visualization.events.addListener(chart, 'ready', setTimeout(myReadyHandler,2000));
+			var my_div = document.getElementById('chart_div')
+			var chart = new google.visualization.PieChart(my_div);
+			google.visualization.events.addListener(chart, 'ready', function () { 
+				my_div.innerHTML = 'img src="' + chart.getImageURI() + '">';
+				window.status = "ready";
+				
+			});
 		chart.draw(data, options);
 	};
 	// Grafiek voor het tonen van het aantal tickets per Support Call Category
@@ -77,7 +83,7 @@
 
 		var data = new google.visualization.DataTable();
 		// De type/role kolom is voor de totaal cijfers die telkens aan de grafiek vasthangen.
-		data.addColumn('string', 'Categorieën');
+		data.addColumn('string', 'Categorie');
 		data.addColumn('number', 'Aantal');
 		data.addColumn({ type: 'number', role: 'annotation' })
 		@{
@@ -216,15 +222,8 @@
 	</script>
 
 </head>
-<body onload="CallBackForDrawingPdf()">
-	<!-- Titel en de gekozen filter-->
-	@if (Model.PdfFormat == false) {
-		<h2>Graphs</h2>
-		<h3>@ViewBag.filter</h3>
-		<div class="btn btn-default">
-			<a href="@Url.Action("PrintPdf", "Home")" target="_blank"><img src="~/images/pdf.png" width="40" /></a>
-		</div>
-	}
+<body >
+
 
 	<!-- De incidenten tabel. De eerste foreach loop overloopt alle urgenties om deze in de table header te plaatsen.
 		 De tweede foreach loop overloopt alle verschillende impacten om deze in de eerste kolom te plaatsen.
@@ -253,33 +252,24 @@
 						foreach (var urg in urgenties)
 						{
 							string value = @Priorities[counter_imp, counter_urg].ToString();
-
-							if (Model.PdfFormat == false)
-							{
-								<td>@Html.ActionLink(value, "SlaFilter", new { imp = @impacts[counter_imp - 1], urg = @urgenties[counter_urg - 1] })</td>
-							}
-							if (Model.PdfFormat == true)
-							{ 
-								<td>@value</td>
-							}
+							<td>@value</td>
 							counter_urg++;
-
 						}
 
 						counter_imp++;
-						}
+					}
 				</tr>
 			}
 		}
 	</table>
 	<div id="chartparent">
 		<!-- De div elementen bevatten elk een grafiek. De lijnen (hr) zijn puur voor wat overzicht op de pagina te creëren.-->
-		<hr style="width: 100%; color: black; height: 3px; background-color:dimgrey;" />
+		@*<hr style="width: 100%; color: black; height: 3px; background-color:dimgrey;" />
 		<div id="cat_chart"></div>
 		<div id="test_chart"></div>
 		<div id="incniv_chart"></div>
 		<div id="incnivStacked_chart"></div>
-		<div id="chart_div"></div>
+		<div id="chart_div"></div>*@
 		<!-- De tabel waar per groep staat hoeveel tickets een persoon heeft behandeld.-->
 		<br />
 
@@ -298,7 +288,7 @@
 					string amount = "";
 					string id1 = ".group" + nr.ToString();
 					string id2 = "group" + nr.ToString();
-					
+
 					// Overlopen van alle namen in deze groep en tellen heoveel dit er zijn voor de som weer te kunnen geven
 					foreach (var n in allNames)
 					{

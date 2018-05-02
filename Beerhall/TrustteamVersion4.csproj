@@ -3,6 +3,9 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <DebugType>Full</DebugType>
+    <ApplicationIcon />
+    <OutputType>Exe</OutputType>
+    <StartupObject>TrustTeamVersion4.Program</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,6 +19,7 @@
     <PackageReference Include="Microsoft.AspNet.Razor" Version="3.2.4" />
     <PackageReference Include="Microsoft.AspNet.WebPages" Version="3.2.4" />
     <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.7" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.0.3" />
     <PackageReference Include="Microsoft.Net.Http" Version="2.2.29" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.0.3" />
@@ -31,6 +35,12 @@
 
   <ItemGroup>
     <DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="2.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Rotativa.NetCore">
+      <HintPath>..\Rotativa.NetCore\Rotativa.NetCore\bin\Debug\netcoreapp1.0\Rotativa.NetCore.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

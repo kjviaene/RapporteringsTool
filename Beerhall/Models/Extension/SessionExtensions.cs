@@ -30,19 +30,25 @@ namespace TrustteamVersion4.Models.Extension
 		}
 
 		#endregion
+
 		#region Home
-		public static void SetObject<Home>(this ISession session, string key, Home value)
+		public static void SetObject<T>(this ISession session, string key, T value)
 		{
 			session.SetString(key, JsonConvert.SerializeObject(value));
 
 		}
-		public static Home GetObjectHome<Home>(this ISession session, string key)
+		public static T GetObjectSingle<T>(this ISession session, string key)
 		{
 			var value = session.GetString(key);
 			if (value == null)
 			{ value = "";  }
-			return JsonConvert.DeserializeObject<Home>(value);
+			return JsonConvert.DeserializeObject<T>(value);
 		}
+		#endregion
+
+		#region GraphsViewModel
+
+
 		#endregion
 
 

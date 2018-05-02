@@ -52,8 +52,16 @@ namespace TrustteamVersion4.Models.Extension
 			return type.GetProperties().Where(pi => pi.GetCustomAttributes(typeof(NoPrintAttribute), true).Length == 0).ToArray();
 		}
 
+		// Maken van een foreach methode voor IEnumerables
+		public static void ForEach<T>(this IEnumerable<T> source, Action<T> action)
+		{
+			foreach (T item in source)
+				action(item);
+		}
 	}
 }
 
 // source for Everything but the "GetFilteredProperties" :
 // https://github.com/JanKallman/EPPlus
+// Source for IEnumerable
+// https://stackoverflow.com/questions/1883920/call-a-function-for-each-value-in-a-generic-c-sharp-collection

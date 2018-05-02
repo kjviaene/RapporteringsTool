@@ -28,7 +28,7 @@ namespace TrustTeamVersion4.Models.Domain
 		int[,] GetIncidentenTable(IEnumerable<Home> homes);
 		IEnumerable<Home> RemoveNull(IEnumerable<Home> homes);
 		int[] GetCategoryCount(IEnumerable<Home> homes);
-		MultiKeyDictionary<string, string, int> GetPersonsPerGroup(IEnumerable<Home> homes);
+		MultiKeyDictionary<string, string, int> GetPersonsPerGroup(IEnumerable<Home> homes, List<string> gr, List<string> na);
 		List<string> GetUniqueGroups(IEnumerable<Home> homes);
 		List<string> GetUniquePersonNames(IEnumerable<Home> homes);
 	}

@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
 using System.Reflection;
 using System.Text;
+using TrustteamVersion4.Models.Extension;
+using TrustteamVersion4.Models.ViewModels;
 
 namespace TrustTeamVersion4.Data.Repositories
 {
@@ -491,37 +493,24 @@ namespace TrustTeamVersion4.Data.Repositories
 		// gaven problemen door hun fixed length waardoor ze zeer veel white space hebben en de lists gaven problemen bij het itereren.
 		// Hier is de eerste key telkens de groep en de tweede de persoon. De value is dan het aantal tickets dat geteld wordt bij die persoon.
 		//
-		public MultiKeyDictionary<string, string, int> GetPersonsPerGroup(IEnumerable<Home> homes)
+		public MultiKeyDictionary<string, string, int> GetPersonsPerGroup(IEnumerable<Home> homes ,List<string> gr, List<string> na)
 		{
-			List<string> groups = GetUniqueGroups(homes);
+			IEnumerable<Home> Filtered = homes;
+			Filtered.ForEach(h => h.RemoveNull());
+			List<string> groups = gr;
 			groups.Add("");
-			List<string> names = GetUniquePersonNames(homes);
+			List<string> names = na;
 			names.Add("");
 			var result = new MultiKeyDictionary<string, string, int>();
-			int counter1 = 0;
-			foreach (var g in groups)
-			{
-				int counter2 = 0;
-				foreach (var n in names)
-				{
-					int counter3 = 0;
-					foreach (Home h in homes)
-					{
-						h.RemoveNull();
-						if (h.GroupName == g && h.PersonName == n)
-						{
-							counter3++;
-						}
-					}
-					if (counter3 > 0)
-					{
-						result.Add(g,n,counter3);
-					}
-					counter2++;
-				}
-				counter1++;
+			var newList = Filtered.GroupBy(x => new { x.GroupName, x.PersonName});
 
+			foreach (var y in newList)
+			{
+				if(y.ToList().Count > 0)
+					result.Add(y.Key.GroupName, y.Key.PersonName, y.ToList().Count);
 			}
+
+
 			return result;
 		}
 		// Geeft de unieke groepen terug voor de meegegeven verzameling homes

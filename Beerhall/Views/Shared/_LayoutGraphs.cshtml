@@ -1,4 +1,5 @@
-﻿<!DOCTYPE html>
+﻿@model TrustteamVersion4.Models.ViewModels.GraphsViewModel
+<!DOCTYPE html>
 <html>
 <head>
 	<meta charset="utf-8" />
@@ -32,7 +33,8 @@
 			type="text/javascript"></script>
 </head>
 <body>
-	
+	@if (Model.PdfFormat == false)
+	{
 		<nav class="navbar navbar-inverse navbar-fixed-top">
 			<div class="container">
 				<div class="navbar-header">
@@ -52,7 +54,7 @@
 				</div>
 			</div>
 		</nav>
-	
+	}
 	<div class="container body-content">
 		@if (TempData["message"] != null)
 		{

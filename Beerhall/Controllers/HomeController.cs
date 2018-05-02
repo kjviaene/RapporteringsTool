@@ -18,11 +18,10 @@ using NPOI.XSSF.UserModel;
 using System.Data;
 using System.ComponentModel;
 using System.Web.Mvc;
-//using Rotativa.AspNetCore;
-//using Rotativa.AspNetCore.Options;
-using Rotativa.NetCore;
-using DinkToPdf;
+using Rotativa.AspNetCore;
+using Rotativa.AspNetCore.Options;
 using TrustteamVersion4.Models.ViewModels;
+//using Rotativa.NetCore.Options;
 
 namespace TrustTeamVersion4.Controllers
 {
@@ -329,7 +328,7 @@ namespace TrustTeamVersion4.Controllers
 		#region Graphs method
 		public IActionResult Graphs(Home filter, GraphsViewModel model)
 		{
-			GraphsViewModel temp1 = model;
+			GraphsViewModel graphsView = model;
 			// Als er een filter is opgegeven dan voeren we de volgende stappen uit
 			if (!(filter.IsEmptyObject()))
 			{
@@ -349,7 +348,7 @@ namespace TrustTeamVersion4.Controllers
 			// Als er geen filter is meegegeven dan kijken we of er eentje in de session zit
 			else
 			{
-				_filter = HttpContext.Session.GetObjectHome<Home>("filter"); ;
+				_filter = HttpContext.Session.GetObjectSingle<Home>("filter"); ;
 				_homesFiltered = HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
 			}// Als er geen filter in de session zat dan tonen we terug de index pagina met een melding
 			if (CheckInput(_filter))
@@ -359,10 +358,20 @@ namespace TrustTeamVersion4.Controllers
 			}
 			#endregion
 			// Het aanmaken van een ViewModel nu we zeker zijn dat  _filter niet null is.
-			if (temp1.isNullObject())
-				temp1 = new GraphsViewModel(_homeRepository, _homesFiltered, _filter);
+			if (graphsView.isNullObject())
+				try
+				{
+					graphsView = new GraphsViewModel(_homeRepository, _homesFiltered, _filter);
+				}
+				catch (Exception e)
+				{
+					SetViewDataIndex();
+					ViewData["Error"] = e.Message;
+					this.Index();
+				}
+			HttpContext.Session.SetObject<GraphsViewModel>("graphsViewModel",graphsView);
 			// doorgeven ViewModel aan de View
-			return View(temp1);
+			return View(graphsView);
 		}
 		#endregion
 		#region Reset method
@@ -492,18 +501,28 @@ namespace TrustTeamVersion4.Controllers
 			return alphabet;
 		}
 		#endregion
-
+		#region Print Pdf
 		public IActionResult PrintPdf()
 		{
-			SetViewDataIndex();
-			_filter = HttpContext.Session.GetObjectHome<Home>("filter"); ;
-			_homesFiltered = HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
-			GraphsViewModel temp2 = new GraphsViewModel(_homeRepository,_homesFiltered,_filter);
+			GraphsViewModel graphsView = new GraphsViewModel();
+			try
+			{
+				_filter = HttpContext.Session.GetObjectSingle<Home>("filter"); ;
+				_homesFiltered = HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
+				graphsView = HttpContext.Session.GetObjectSingle<GraphsViewModel>("graphsViewModel");
+				graphsView.PdfFormat = true;
+			}
+			catch (Exception e)
+			{
+				SetViewDataIndex();
+				ViewData["Error"] = e.Message;
+				this.Index();
+			}
 
-			//return new ActionAsPdf("Graphs", temp2);
-
-			return new ViewAsPdf("Graphs", temp2) { CustomSwitches = "--no-stop-slow-scripts --javascript-delay 5000 --window-status ready --no-pdf-compression" };
+			return new Rotativa.AspNetCore.ViewAsPdf("Graphs", graphsView) { CustomSwitches = "--no-stop-slow-scripts --window-status ready" }; // --no-pdf-compression
 		}
+		#endregion
+
 	}
 
 
