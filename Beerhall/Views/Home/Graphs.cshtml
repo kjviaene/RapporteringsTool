@@ -68,7 +68,7 @@
 		// nooit het ready signaal krijgt (aangezien de draw functie deze al reeds zou gestuurd hebben en dit niet opnieuw doet)
 
 		var chart = new google.visualization.PieChart(document.getElementById('chart_div'));
-		google.visualization.events.addListener(chart, 'ready', setTimeout(myReadyHandler,2000));
+		google.visualization.events.addListener(chart, 'ready', myReadyHandler);
 		chart.draw(data, options);
 	};
 	// Grafiek voor het tonen van het aantal tickets per Support Call Category
@@ -298,7 +298,7 @@
 					string amount = "";
 					string id1 = ".group" + nr.ToString();
 					string id2 = "group" + nr.ToString();
-					
+
 					// Overlopen van alle namen in deze groep en tellen heoveel dit er zijn voor de som weer te kunnen geven
 					foreach (var n in allNames)
 					{
@@ -307,34 +307,36 @@
 							counter = counter + namesPerGroup[gr, n];
 						}
 					}
-					// Maken van de header, als de groep null is dan geven we dit weer als Not Set en in het rood
-					if (gr.Equals("NULL"))
+					if (counter > 0)
 					{
+						// Maken van de header, als de groep null is dan geven we dit weer als Not Set en in het rood
+						if (gr.Equals("NULL"))
+						{
 						<tr>
 							<th colspan="2" data-toggle="collapse" data-target="@id1" class="clickable danger">Not Set <b style="float: right;">@counter</b></th>
 						</tr>
-					}
-					else
-					{
+						}
+						else
+						{
 						<tr>
 							<th colspan="2" data-toggle="collapse" data-target="@id1" class="clickable info">@gr <b style="float: right;">@counter</b></th>
 						</tr>
-					}
-					// Printen van alle namen en het aantal keer dat ze een ticket behandelden.
-					foreach (var n in allNames)
-					{
-						if (namesPerGroup.ContainsKey(gr, n))
-						{
-							<tr>
-								<td class="collapse in @id2 "> <i>@n </i> <i style="float: right;">@amount </i></td>
-							</tr>
 						}
+						// Printen van alle namen en het aantal keer dat ze een ticket behandelden.
+						foreach (var n in allNames)
+						{
+							if (namesPerGroup.ContainsKey(gr, n))
+							{
+							<tr>
+								<td class="collapse in @id2 "> <i>@n </i> <i style="float: right;">@namesPerGroup[gr, n] </i></td>
+							</tr>
+								}
+							}
+						}
+						nr++;
+						counter = 0;
 					}
-
-					nr++;
-					counter = 0;
 				}
-			}
 		</table>
 	}
 </body>

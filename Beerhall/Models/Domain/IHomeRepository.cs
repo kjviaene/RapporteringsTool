@@ -6,6 +6,7 @@ namespace TrustTeamVersion4.Models.Domain
 	public interface IHomeRepository
 	{
 		IEnumerable<Home> GetAll();
+		Dictionary<string, List<object>> getPossibleChoices();
 		List<double?> GetNumbers();
 		List<double?> GetYear();
 		List<string> GetOrganizationNumbers();

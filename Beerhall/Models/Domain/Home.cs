@@ -18,12 +18,14 @@ namespace TrustTeamVersion4.Models.Domain
 		private PropertyInfo[] _PropertyInfos = null;
 		private DateTime _tempDate = DateTime.MaxValue;
 		private DateTime _tempTime = DateTime.MaxValue;
-		private string _groupNameNotNull = "";
-		private string _personNameNotNull = "";
-		
+		private List<string> _tempList = new List<string>();
+
 		// Alle kolom namen
 		// De JsonProperty tag zorgt ervoor dat al deze properties worden geserialized. Anders krijg je gewoon een lege string na serialization. 
 		// De NoPrintAttribute tag zorgt ervoor dat deze property niet in de excel wordt weergegeven.
+		[JsonProperty]
+		[Display(Name = "Nummer ticket")]
+		public Double? Number { get; set; }
 		[JsonProperty]
 		[NotMapped]
 		[NoPrintAttribute]
@@ -42,13 +44,10 @@ namespace TrustTeamVersion4.Models.Domain
 		public string InvoicCenterOrganization { get; set; }
 		[JsonProperty]
 		[Display(Name = "Groep naam")]
-		public string GroupName { get; set;	}
+		public string GroupName { get; set; }
 		[JsonProperty]
 		[Display(Name = "Naam persoon")]
 		public string PersonName { get; set; }
-		[JsonProperty]
-		[Display(Name = "Nummer ticket")]
-		public Double? Number { get; set; }
 		[JsonProperty]
 		[Display(Name = "Support Call Type")]
 		public string SupportCallType { get; set; }
@@ -69,12 +68,12 @@ namespace TrustTeamVersion4.Models.Domain
 		public string SupportCallCategory { get; set; }
 		[JsonProperty]
 		//Deze dates zijn nooit null. Is verplicht om in te vullen bij de tickets, dus hier zijn geen maatregelen nodig.
-		public DateTime SupportCallOpenDate{ get; set;}
+		public DateTime SupportCallOpenDate { get; set; }
 		[JsonProperty]
 		[NotMapped]
 		public DateTime SupportCallOpenDateEinde { get; set; }
 		[JsonProperty]
-		public DateTime SupportCallOpenTime{ get; set;}
+		public DateTime SupportCallOpenTime { get; set; }
 		[JsonProperty]
 		public DateTime? SupportCallClosedDate { get; set; }
 		// De tag "NotMapped" is er omdat anders SQL een error geeft aangezien er geen gelijknamige kolom bestaat in de databank
@@ -82,10 +81,13 @@ namespace TrustTeamVersion4.Models.Domain
 		[JsonProperty]
 		[NoPrintAttribute]
 		[NotMapped]
-		public DateTime SupportCallClosedDateNotNull {
+		public DateTime SupportCallClosedDateNotNull
+		{
 
 			get { return _tempDate; }
-			set { if (value != null)
+			set
+			{
+				if (value != null)
 				{
 					_tempDate = (DateTime)value;
 				}
@@ -98,7 +100,7 @@ namespace TrustTeamVersion4.Models.Domain
 		}
 		[JsonProperty]
 		[Display(Name = "Tijdstip sluiting")]
-		public DateTime? SupportCallClosedTime{get; set;}
+		public DateTime? SupportCallClosedTime { get; set; }
 		// De tag "NotMapped" is er omdat anders SQL een error geeft aangezien er geen gelijknamige kolom bestaat in de databank
 		// Deze property is echter vereist als we met deze data willen werken (uitleg zie onderaan)
 		[JsonProperty]
@@ -171,7 +173,7 @@ namespace TrustTeamVersion4.Models.Domain
 				_PropertyInfos = this.GetType().GetProperties();
 
 			var sb = new StringBuilder();
-			
+
 			foreach (var info in _PropertyInfos)
 			{
 				var value = info.GetValue(this, null) ?? "null";
@@ -210,14 +212,15 @@ namespace TrustTeamVersion4.Models.Domain
 		#endregion
 		#region Other methods
 		// Het retournenen van alle properties als strings in een lijst
-		public List<string> getProperties() {
+		public List<string> getProperties()
+		{
 			List<string> temp = new List<String>();
 			var properties = this.GetType().GetProperties();
 			foreach (var info in properties)
 			{
 				temp.Add(info.Name);
 			}
-			
+
 			return temp;
 		}
 		// Deze methode is er puur om te zorgen dat we een property hebben waar we de closed data vinden waar die nooit null kan zijn. Ze wordt ingesteld op de
@@ -231,7 +234,7 @@ namespace TrustTeamVersion4.Models.Domain
 				this.SupportCallClosedDateNotNull = DateTime.MinValue;
 				this.SupportCallClosedDate = DateTime.MinValue;
 			}
-			if(this.SupportCallClosedDate != null)
+			if (this.SupportCallClosedDate != null)
 			{
 				this.SupportCallClosedDateNotNull = (DateTime)this.SupportCallClosedDate;
 			}
@@ -271,9 +274,9 @@ namespace TrustTeamVersion4.Models.Domain
 			foreach (var prop in _PropertyInfos)
 			{
 				var value = prop.GetValue(this, null) ?? "null";
-				if (!(value.Equals("null"))  & !(value.Equals(false)))
+				if (!(value.Equals("null")) & !(value.Equals(false)))
 				{
-					if (!(value.Equals(DateTime.MaxValue) | value.Equals(DateTime.MinValue)))
+					if (!(value.Equals(DateTime.MaxValue) | value.Equals(DateTime.MinValue) | value.Equals(new List<int>())))
 					{
 						check = 1;
 						break;
@@ -303,7 +306,8 @@ namespace TrustTeamVersion4.Models.Domain
 		}
 		// Controleren of de bool LastMonth true is, zoja, dan worden de correcte properties ingesteld op de juiste data.
 		public void CheckAndSetLastMonth()
-		{ int substractMonth = -(1);
+		{
+			int substractMonth = -(1);
 			if (this.LastMonth)
 			{
 				this.SupportCallOpenDate = DateTime.Now.AddMonths(substractMonth);
@@ -317,6 +321,16 @@ namespace TrustTeamVersion4.Models.Domain
 
 			return value;
 
+		}
+
+		public Dictionary<string,string> CutDates()
+		{
+			Dictionary<string, string> cutDate = new Dictionary<string, string> { };
+			cutDate.Add("SupportCallOpenDate", this.SupportCallOpenDate.ToShortDateString());
+			cutDate.Add("SupportCallOpenTime", this.SupportCallOpenTime.ToShortTimeString());
+			cutDate.Add("SupportCallClosedDate",this.SupportCallClosedDateNotNull.ToShortDateString());
+			cutDate.Add("SupportCallClosedTime", this.SupportCallClosedTimeNotNull.ToShortTimeString());
+			return cutDate;
 		}
 		#endregion
 	}

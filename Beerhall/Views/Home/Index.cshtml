@@ -1,84 +1,125 @@
 ﻿@model TrustTeamVersion4.Models.Domain.Home
 @{
 	ViewData["Title"] = "Kies uw gewenste data om op te filteren";
+	Dictionary<string, List<object>> selections = (Dictionary<string, List<object>>)ViewData["Selections"];
 }
 
 <!-- De lijst van zaken waarop kan gefiltert worden.-->
 <h3>@ViewData["Title"]</h3>
 <h4 class="text-danger">@ViewData["Error"]</h4>
 <form class="form-group" method="post">
-	<label> Ticket Number </label>
-	<select asp-items="@(ViewData["TicketNumbers"] as SelectList ) " class="form-control" asp-for="Number">
-		<option value=""> --- Selecteer Ticket Nummer ---</option>
-	</select>
-	<label> Year </label>
-	<select asp-items="@(ViewData["Years"] as SelectList)" class="form-control" asp-for="Year">
-		<option value=""> --- Selecteer jaar ---</option>
-	</select>
-
-	<label> Organization Number </label>
-	<select asp-items="@(ViewData["OrganizationNumbers"] as SelectList)" class="form-control" asp-for="OrganizationNumber">
-		<option value=""> --- Selecteer Organisatie nummer ---</option>
-	</select>
-	<label> Organization name </label>
-	<select asp-items="@(ViewData["InvoiceOrg"] as SelectList)" class="form-control" asp-for="InvoicCenterOrganization">
-		<option value=""> --- Selecteer Naam Organisatie ---</option>
-	</select>
-	<label> Group name </label>
-	<select asp-items="@(ViewData["GroupNames"] as SelectList)" class="form-control" asp-for="GroupName">
-		<option value=""> --- Selecteer Naam Groep ---</option>
-	</select>
-	<label> Person Names </label>
-	<select asp-items="@(ViewData["PersonNames"] as SelectList)" class="form-control" asp-for="PersonName">
-		<option value=""> --- Selecteer Persoon Naam ---</option>
-	</select>
-	<label> Support call types </label>
-	<select asp-items="@(ViewData["SupportCallTypes"] as SelectList)" class="form-control" asp-for="SupportCallType">
-		<option value=""> --- Selecteer Support Call Type ---</option>
-	</select>
-	<label> Support call Priorities </label>
-	<select asp-items="@(ViewData["SupportCallPriorities"] as SelectList)" class="form-control" asp-for="SupportCallPriority">
-		<option value=""> --- Selecteer Support Call Priority ---</option>
-	</select>
-	<label> Support call Impacts </label>
-	<select asp-items="@(ViewData["SupportCallImpacts"] as SelectList)" class="form-control" asp-for="SupportCallImpact">
-		<option value=""> --- Selecteer Support Call Impacts ---</option>
-	</select>
-	<label> Support call Urgencies </label>
-	<select asp-items="@(ViewData["SupportCallUrgencies"] as SelectList)" class="form-control" asp-for="SupportCallUrgency">
-		<option value=""> --- Selecteer Support Call Urgencies ---</option>
-	</select>
-	<label> Support call statusses </label>
-	<select asp-items="@(ViewData["SupportCallstatusses"] as SelectList)" class="form-control" asp-for="SupportCallStatus">
-		<option value=""> --- Selecteer Support Call status ---</option>
-	</select>
-	<label> Opened by users </label>
-	<select asp-items="@(ViewData["OpenedByUsers"] as SelectList)" class="form-control" asp-for="OpenedByUser">
-		<option value=""> --- Selecteer User ---</option>
-	</select>
-	<label> Assigned tp users </label>
-	<select asp-items="@(ViewData["AssignedToUsers"] as SelectList)" class="form-control" asp-for="AssignedToUser">
-		<option value=""> --- Selecteer User ---</option>
-	</select>
-	<label> Assigned tp Queus </label>
-	<select asp-items="@(ViewData["AssignedToQueus"] as SelectList)" class="form-control" asp-for="AssignedToQueue">
-		<option value=""> --- Selecteer queue ---</option>
-	</select>
-	<label> Invoice Statusses</label>
-	<select asp-items="@(ViewData["InvoiceStatusses"] as SelectList)" class="form-control" asp-for="InvoiceStatus">
-		<option value=""> --- Selecteer Invoice Status ---</option>
-	</select>
-	<div >
-		<label>Datum open begin</label>
-		@Html.TextBox("SupportCallOpenDate", null, new { @class = "datefield", type = "date" })
-		<label>Datum open eind</label>
-		@Html.TextBox("SupportCallOpenDateEinde", null, new { @class = "datefield", type = "date" })
+	@*<div class=" col-lg-5">
+			<label> Ticket Number </label>
+			<select asp-items="@(ViewData["TicketNumbers"] as SelectList ) " class="form-control" asp-for="Number">
+				<option value=""> --- Selecteer Ticket Nummer ---</option>
+			</select>
+		</div>*@
+	<div class=" col-lg-5">
+		<label> Ticket Number </label>
+		<textarea asp-for="Number" class="form-control" style="height:34px;"></textarea>
 	</div>
-	<b>Voorbije maand: </b>@Html.CheckBoxFor(m => m.LastMonth); 
+	<div class=" col-lg-5">
+		<label> Year </label>
+		<select asp-items="@(new SelectList(selections["Year"]))" class="form-control " asp-for="Year">
+			<option value=""> --- Selecteer jaar ---</option>
+		</select>
+	</div>
+	<div class=" col-lg-5">
+		<label> Organization Number </label>
+		<select asp-items="@(new SelectList(selections["OrganizationNumber"]))" class="form-control" asp-for="OrganizationNumber">
+			<option value=""> --- Selecteer Organisatie nummer ---</option>
+		</select>
+	</div>
+	<div class=" col-lg-5">
+		<label> Organization name </label>
+		<select asp-items="@(new SelectList(selections["InvoicCenterOrganization"] ))" class="form-control" asp-for="InvoicCenterOrganization">
+			<option value=""> --- Selecteer Naam Organisatie ---</option>
+		</select>
+	</div>
+	<div class=" col-lg-5">
+		<label> Group name </label>
+		<select asp-items="@(new SelectList(selections["GroupName"] ))" class="form-control" asp-for="GroupName">
+			<option value=""> --- Selecteer Naam Groep ---</option>
+		</select>
+	</div>
+	<div class=" col-lg-5">
+		<label> Person Names </label>
+		<select asp-items="@(new SelectList(selections["PersonName"] ))" class="form-control" asp-for="PersonName">
+			<option value=""> --- Selecteer Persoon Naam ---</option>
+		</select>
+	</div>
+	<div class=" col-lg-5">
+		<label> Support call types </label>
+		<select asp-items="@(new SelectList(selections["SupportCallType"] ))" class="form-control" asp-for="SupportCallType">
+			<option value=""> --- Selecteer Support Call Type ---</option>
+		</select>
+	</div>
+	<div class=" col-lg-5">
+		<label> Support call Priorities </label>
+		<select asp-items="@(new SelectList(selections["SupportCallPriority"] ))" class="form-control" asp-for="SupportCallPriority">
+			<option value=""> --- Selecteer Support Call Priority ---</option>
+		</select>
+	</div>
+	<div class=" col-lg-5">
+		<label> Support call Impacts </label>
+		<select asp-items="@(new SelectList(selections["SupportCallImpact"] ))" class="form-control" asp-for="SupportCallImpact">
+			<option value=""> --- Selecteer Support Call Impacts ---</option>
+		</select>
+	</div>
+	<div class=" col-lg-5">
+		<label> Support call Urgencies </label>
+		<select asp-items="@(new SelectList(selections["SupportCallUrgency"] ))" class="form-control" asp-for="SupportCallUrgency">
+			<option value=""> --- Selecteer Support Call Urgencies ---</option>
+		</select>
+	</div>
+	<div class=" col-lg-5">
+		<label> Support call statusses </label>
+		<select asp-items="@(new SelectList(selections["SupportCallStatus"] ))" class="form-control" asp-for="SupportCallStatus">
+			<option value=""> --- Selecteer Support Call status ---</option>
+		</select>
+	</div>
+	<div class=" col-lg-5">
+		<label> Opened by users </label>
+		<select asp-items="@(new SelectList(selections["OpenedByUser"] ))" class="form-control" asp-for="OpenedByUser">
+			<option value=""> --- Selecteer User ---</option>
+		</select>
+	</div>
+	<div class=" col-lg-5">
+		<label> Assigned tp users </label>
+		<select asp-items="@(new SelectList(selections["AssignedToUser"] ))" class="form-control" asp-for="AssignedToUser">
+			<option value=""> --- Selecteer User ---</option>
+		</select>
+	</div>
+	<div class=" col-lg-5">
+		<label> Assigned tp Queus </label>
+		<select asp-items="@(new SelectList(selections["AssignedToQueue"] ))" class="form-control" asp-for="AssignedToQueue">
+			<option value=""> --- Selecteer queue ---</option>
+		</select>
+	</div>
+	<div class=" col-lg-5">
+		<label> Invoice Statusses</label>
+		<select asp-items="@(new SelectList(selections["InvoiceStatus"] ))" class="form-control" asp-for="InvoiceStatus">
+			<option value=""> --- Selecteer Invoice Status ---</option>
+		</select>
+	</div>
+	<div style="margin: 5px; margin-bottom: 15px;">
+		<label>Datum open begin</label>
+		@Html.TextBox("SupportCallOpenDate", null, new { @class = "datefield", type = "date", @id = "date1" })
+		<label>Datum open eind</label>
+		@Html.TextBox("SupportCallOpenDateEinde", null, new { @class = "datefield", type = "date", @id = "date2" })
+	</div>
+	<b style="margin-top: 10px;">Voorbije maand: </b>@Html.CheckBoxFor(m => m.LastMonth, new { onchange = "toggleDisabled(this.checked)" })
+
 	<br />
-	<button class="btn btn-primary" type="submit" asp-action="Table">Filter</button>
-	<button asp-action="Graphs" class="btn btn-primary" type="submit">Graphs & Information</button>
-	<a asp-action="Reset" class="btn btn-default">Reset</a>
+	<button class="btn btn-primary" type="submit" asp-action="Table" style="margin: 5px;">Filter</button>
+	<button asp-action="Graphs" class="btn btn-primary" type="submit" style="margin: 5px;">Graphs & Information</button>
+	<a asp-action="Reset" class="btn btn-default" style="margin: 5px;">Reset</a>
 </form>
 
 
+<script>
+function toggleDisabled(_checked) {
+	document.getElementById('date1').disabled = _checked ? true : false;
+	document.getElementById('date2').disabled = _checked ? true : false;
+}
+</script>

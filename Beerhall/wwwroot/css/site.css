@@ -37,7 +37,13 @@ table tr th button.btn-table:hover {
 	margin: 0 0 0 0 !important;
 	vertical-align: unset !important;
 }
-
+.closeable {
+	background: url(../images/close2.png) !important;
+	display: block !important;
+	height: 15px !important;
+	width: 15px !important;
+	float:right;
+}
 /* Make .svg files in the carousel display properly in older browsers */
 .carousel-inner .item img[src$=".svg"] {
     width: 100%;

@@ -44,6 +44,7 @@ namespace TrustteamVersion4.Models.ViewModels
 		[JsonProperty]
 		public bool PdfFormat { get; set; }
 		#endregion
+		#region constructor
 		public GraphsViewModel()
 		{
 
@@ -62,7 +63,7 @@ namespace TrustteamVersion4.Models.ViewModels
 				throw new Exception("Er ging iets fout, mogelijks is uw sessie verlopen.");
 			}
 		}
-
+		#endregion
 		#region Methods
 		#region PieChart
 		private async Task<int> PieChart(IHomeRepository repo, IEnumerable<Home> filtered)

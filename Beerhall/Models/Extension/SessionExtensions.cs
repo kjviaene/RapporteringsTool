@@ -46,11 +46,13 @@ namespace TrustteamVersion4.Models.Extension
 		}
 		#endregion
 
-		#region GraphsViewModel
-
-
-		#endregion
-
+		public static IDictionary<string,List<object>> GetObjectDict<IDictionary>(this ISession session, string key)
+		{
+			var value = session.GetString(key);
+			if (value == null)
+			{ return new Dictionary<string, List<object>>(); }
+			return JsonConvert.DeserializeObject<Dictionary<string, List<object>>>(value);
+		}
 
 	}
 }

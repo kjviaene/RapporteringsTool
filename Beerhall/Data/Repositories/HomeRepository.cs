@@ -14,13 +14,13 @@ namespace TrustTeamVersion4.Data.Repositories
 {
 	public class HomeRepository : IHomeRepository
 	{
-		#region Properties
+		#region Properties/variables
 		private readonly ApplicationDbContext _dbContext;
 		private readonly DbSet<Home> _homes;
 		public IEnumerable<Home> HomesFiltered;
+		public Dictionary<string, List<object>> IndexSelects;
+		private readonly Home _home = new Home();
 		#endregion
-
-
 		#region Constructor
 		public HomeRepository(ApplicationDbContext dbContext)
 		{
@@ -34,6 +34,32 @@ namespace TrustTeamVersion4.Data.Repositories
 
 		#endregion
 
+		#region Get method for Index
+		public Dictionary<string, List<object>> getPossibleChoices()
+		{
+			IndexSelects = new Dictionary<string, List<object>>();
+			List<string> wantedProperties = new List<string> {"Year", "OrganizationNumber", "InvoicCenterOrganization", "GroupName", "PersonName", "SupportCallType", "SupportCallPriority", "SupportCallImpact", "SupportCallUrgency", "SupportCallStatus", "OpenedByUser", "AssignedToUser", "AssignedToQueue", "InvoiceStatus" };
+			PropertyInfo[] properties = (PropertyInfo[])_home.GetProperties().Where(p => wantedProperties.Contains(p.Name)).ToArray();
+			foreach (var lijst in wantedProperties)
+			{
+				IndexSelects.Add(lijst,new List<object>());
+			}
+			foreach (Home h in _homes)
+			{
+				foreach (var prop in properties)
+				{
+					if (!(prop.GetValue(h) == null | IndexSelects[prop.Name].Contains(prop.GetValue(h))))
+					{
+						IndexSelects[prop.Name].Add(prop.GetValue(h));
+					}
+
+				}
+
+			}
+
+			return IndexSelects;
+		}
+		#endregion
 		#region Get methodes voor de verschillen kolommen
 		// Return alle unieke nummers die in de databank zitten
 		public List<double?> GetNumbers()
@@ -296,7 +322,8 @@ namespace TrustTeamVersion4.Data.Repositories
 							// er moet ook gekeken worden of het over dezelfde property gaat, dit omdat er soms in verschillende properties dezelfde waarda kan
 							// zitten. In dit geval zou de counter te veel verhogen en kan dat verkeerde resultaten geven
 							// en niet null is dan wordt de counter met eentje verhoogd
-							if (valueAll.Equals(valueFilter) && !(valueFilter.GetType() == typeof(DateTime)) && !(valueFilter.Equals("null")) && propFilter.Name == propAll.Name)
+							// Ook de list variabele slaan we over, omdat deze standaard empty is maar dus wel niet null is
+							if (valueAll.Equals(valueFilter) && !(valueFilter.GetType() == typeof(DateTime)) && !(valueFilter.Equals("null")) && propFilter.Name == propAll.Name && !(valueFilter.Equals(false)))
 							{
 								counter++;
 
@@ -349,7 +376,7 @@ namespace TrustTeamVersion4.Data.Repositories
 			foreach (var prop in _Properties)
 			{
 				var value = prop.GetValue(home, null) ?? "null";
-				if (!(value.Equals("null") | value.Equals(DateTime.MinValue) | value.Equals(DateTime.MaxValue)))
+				if (!(value.Equals("null") | value.Equals(DateTime.MinValue) | value.Equals(DateTime.MaxValue) | value.Equals(false)))
 					amount++;
 			}
 

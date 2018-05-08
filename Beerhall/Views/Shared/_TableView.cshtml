@@ -1,0 +1,107 @@
+﻿@model TrustteamVersion4.Models.ViewModels.TableViewModel
+
+<script type="text/javascript" src="~/js/tableSorter.js"></script>
+<script type="text/javascript" src="~/js/tableClose.js"></script>
+@{
+	Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<!-- table test -->
+<div id="tableDiv">
+	<table class="table table-striped table-condensed table-bordered table-responsive">
+		<thead>
+			<tr>
+				<!-- - De klasse tbh_*_hide is voor de mogelijkheid tot het verbergen van elke kolom
+			 - De klasse btn-table is voor de knop die dient om een kolom te verbergen. Deze krijgt wat andere css omdat
+			   de standaard css niet gepast was in deze context.
+			 - Het id btnHide* is telkens voor het verbergen van de kolom waarin de button zich bevind
+			 - De Actionlinks dienen voor het sorteren van deze kolom. Dit roept terug de Table methode op uit de controller en geeft
+			   als parameter een nieuwe instatie terug van de correcte viewBag
+			- Het automatiseren van dit is wat uitdagend door het feit dat bij elke header een andere Viewbag instantie wordt gecreërd. Itereren
+			  door een verzameling en voor elk item een aparte instantie van een verschillend object aan kunnen maken is absoluut niet eenvoudig en
+			  zou waarschijnlijk meer werk kosten dan dat het opstellen van deze manuele lijst kost.-->
+				<th>N°</th>
+				@{
+				string id = "";
+				foreach (var prop in Model.PropertiesAsString)
+				{
+					id = prop;
+					if (Model.IsShown(prop))
+					{
+						<th id="@id">
+							@Html.ActionLink("", "CloseColumnPartial", "Home", new { closed = prop }, new { @class = "closeable " })
+							@Html.ActionLink(prop, "SortPartial", "Home", new { sorter = @id }, new { @class = "sortable col-lg-5" })
+
+						</th>
+				}
+			}
+
+
+				}
+			</tr>
+		</thead>
+		<tbody>
+			<!-- Het overlopen van alle Home objecten die werden meegeven in het model en het printen hiervan in de tabel-->
+			@{ int counter = 1;
+			Dictionary<string, string> cutDate;
+			List<string> dateToCut = new List<string> { "SupportCallOpenDate", "SupportCallOpenTime", "SupportCallClosedDate", "SupportCallClosedTime" };
+			foreach (var item in Model.Data)
+			{
+				cutDate = item.CutDates();
+
+				<tr>
+					<td>@counter</td>
+					@{
+					foreach (var prop in Model.Properties)
+					{
+						if (Model.IsShown(prop.Name) && !(dateToCut.Contains(prop.Name)))
+						{
+							<td>@prop.GetValue(item)</td>
+					}
+					else if (Model.IsShown(prop.Name) && dateToCut.Contains(prop.Name))
+					{
+						<td>@cutDate[prop.Name]</td>
+				}
+
+
+			}
+			counter = counter + 1;
+					}
+				</tr>
+		}
+			}
+		</tbody>
+	</table>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

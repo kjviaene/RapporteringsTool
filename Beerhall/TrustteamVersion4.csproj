@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AspNetPaging" Version="1.0.0.2" />
     <PackageReference Include="DinkToPdf" Version="1.0.8" />
     <PackageReference Include="DotNetCore.NPOI" Version="1.0.2" />
     <PackageReference Include="EntityFramework" Version="6.2.0" />
@@ -20,9 +21,11 @@
     <PackageReference Include="Microsoft.AspNet.WebPages" Version="3.2.4" />
     <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.7" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.0.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Html.Abstractions" Version="2.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.0.3" />
     <PackageReference Include="Microsoft.Net.Http" Version="2.2.29" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.0.3" />
+    <PackageReference Include="NonFactors.Grid.Core.Mvc6" Version="3.0.0" />
     <PackageReference Include="NReco.ImageGenerator" Version="1.1.1" />
     <PackageReference Include="PagedList.Mvc" Version="4.5.0" />
     <PackageReference Include="RazorPDF2" Version="2.0.0" />
@@ -30,6 +33,7 @@
     <PackageReference Include="Rotativa.Core" Version="2.0.2.1" />
     <PackageReference Include="Rotativa.NetCore" Version="1.0.4" />
     <PackageReference Include="System.Net.Http" Version="4.3.3" />
+    <PackageReference Include="WebGridMvc" Version="1.0.0" />
     <PackageReference Include="wkhtmltopdf.msvc.64.exe" Version="0.12.4" />
   </ItemGroup>
 
