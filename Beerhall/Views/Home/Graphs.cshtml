@@ -77,7 +77,7 @@
 
 		var data = new google.visualization.DataTable();
 		// De type/role kolom is voor de totaal cijfers die telkens aan de grafiek vasthangen.
-		data.addColumn('string', 'Categorieën');
+		data.addColumn('string', 'Categorie');
 		data.addColumn('number', 'Aantal');
 		data.addColumn({ type: 'number', role: 'annotation' })
 		@{
@@ -218,9 +218,11 @@
 </head>
 <body onload="CallBackForDrawingPdf()">
 	<!-- Titel en de gekozen filter-->
-	@if (Model.PdfFormat == false) {
-		<h2>Graphs</h2>
+	@if (Model.PdfFormat == false)
+	{
+		<h2>Gefilterd op : </h2>
 		<h3>@ViewBag.filter</h3>
+		<h4>@ViewData["Error"]</h4>
 		<div class="btn btn-default">
 			<a href="@Url.Action("PrintPdf", "Home")" target="_blank"><img src="~/images/pdf.png" width="40" /></a>
 		</div>
@@ -259,7 +261,7 @@
 								<td>@Html.ActionLink(value, "SlaFilter", new { imp = @impacts[counter_imp - 1], urg = @urgenties[counter_urg - 1] })</td>
 							}
 							if (Model.PdfFormat == true)
-							{ 
+							{
 								<td>@value</td>
 							}
 							counter_urg++;
@@ -267,7 +269,7 @@
 						}
 
 						counter_imp++;
-						}
+					}
 				</tr>
 			}
 		}
@@ -312,31 +314,31 @@
 						// Maken van de header, als de groep null is dan geven we dit weer als Not Set en in het rood
 						if (gr.Equals("NULL"))
 						{
-						<tr>
-							<th colspan="2" data-toggle="collapse" data-target="@id1" class="clickable danger">Not Set <b style="float: right;">@counter</b></th>
-						</tr>
+							<tr>
+								<th colspan="2" data-toggle="collapse" data-target="@id1" class="clickable danger">Not Set <b style="float: right;">@counter</b></th>
+							</tr>
 						}
 						else
 						{
-						<tr>
-							<th colspan="2" data-toggle="collapse" data-target="@id1" class="clickable info">@gr <b style="float: right;">@counter</b></th>
-						</tr>
+							<tr>
+								<th colspan="2" data-toggle="collapse" data-target="@id1" class="clickable info">@gr <b style="float: right;">@counter</b></th>
+							</tr>
 						}
 						// Printen van alle namen en het aantal keer dat ze een ticket behandelden.
 						foreach (var n in allNames)
 						{
 							if (namesPerGroup.ContainsKey(gr, n))
 							{
-							<tr>
-								<td class="collapse in @id2 "> <i>@n </i> <i style="float: right;">@namesPerGroup[gr, n] </i></td>
-							</tr>
-								}
+								<tr>
+									<td class="collapse in @id2 "> <i>@n </i> <i style="float: right;">@namesPerGroup[gr, n] </i></td>
+								</tr>
 							}
 						}
-						nr++;
-						counter = 0;
 					}
+					nr++;
+					counter = 0;
 				}
+			}
 		</table>
 	}
 </body>

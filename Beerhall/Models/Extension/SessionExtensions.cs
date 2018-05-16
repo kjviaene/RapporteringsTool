@@ -32,11 +32,13 @@ namespace TrustteamVersion4.Models.Extension
 		#endregion
 
 		#region Home
+		// Het schrjiven van een object van type T
 		public static void SetObject<T>(this ISession session, string key, T value)
 		{
 			session.SetString(key, JsonConvert.SerializeObject(value));
 
 		}
+		//Het opvragen van één enkel object. Als dit object niet bestaat wordt een lege string gedeserialiseerd
 		public static T GetObjectSingle<T>(this ISession session, string key)
 		{
 			var value = session.GetString(key);
@@ -45,7 +47,7 @@ namespace TrustteamVersion4.Models.Extension
 			return JsonConvert.DeserializeObject<T>(value);
 		}
 		#endregion
-
+		// Opragen van een dictionary die bestaat uit een string en een lijst die zelf nog objecten bevat.
 		public static IDictionary<string,List<object>> GetObjectDict<IDictionary>(this ISession session, string key)
 		{
 			var value = session.GetString(key);

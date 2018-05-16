@@ -9,6 +9,8 @@ using System.Reflection;
 using System.Text;
 using TrustteamVersion4.Models.Extension;
 using TrustteamVersion4.Models.ViewModels;
+using System.Data.SqlClient;
+using System.Data;
 
 namespace TrustTeamVersion4.Data.Repositories
 {
@@ -16,8 +18,9 @@ namespace TrustTeamVersion4.Data.Repositories
 	{
 		#region Properties/variables
 		private readonly ApplicationDbContext _dbContext;
-		private readonly DbSet<Home> _homes;
+		private readonly DbSet<Home> _homes2;
 		public IEnumerable<Home> HomesFiltered;
+		public IEnumerable<Home> _homes;
 		public Dictionary<string, List<object>> IndexSelects;
 		private readonly Home _home = new Home();
 		#endregion
@@ -25,25 +28,135 @@ namespace TrustTeamVersion4.Data.Repositories
 		public HomeRepository(ApplicationDbContext dbContext)
 		{
 			_dbContext = dbContext;
-			_homes = dbContext.homes;
-			foreach (var home in _homes)
-			{
-				home.SetDateNotNull();
-			}
+			_homes2 = dbContext.homes;
+			//_homes = _homes2.Where(x => x.InvoicCenterOrganization.Equals("SHOPINVEST")).ToList();
+			_homes = new List<Home>() { new Home() };
+			//foreach (var home in _homes)
+			//{
+			//	home.SetDateNotNull();
+			//}
 		}
 
 		#endregion
+		#region DB filter
+		// Vervanging van oude filter methode, deze haalt data steeds rechstreeks uit database mbv linq queries.
+		public IEnumerable<Home> getFiltered(string[] property, List<string> filter)
+		{
+			// Bij de eerste iteratie wordt de eerste initiele hoop data opgehaald, daarna wordt op deze reeds opgevraagde data verder gefilterd.
+			// Het is eenvoudiger om over elke property te filteren dan ze allemaal te controleren in 1 linq query omdat we anders met null kwesties zitten
+			// die we liever vermijden. 
+			// De dates worden wel beide in 1 iteratie gecontroleerd omdat dit anders nog een extra if statement zou moeten zijn voor te kiezen tussen < en >
+			List<PropertyInfo> prop = new List<PropertyInfo>();
+			List<Home> result = new List<Home>();
+			List<Home> resultTemp = new List<Home>();
+			bool first = true;
+			bool dateDone = false;
+			int index = 0;
+			int temp = 0;
+			foreach (var str in property)
+			{
+				prop.Add(_home.getProperty(str));
+			}
+			if (prop.Contains(_home.getProperty("SupportCallOpenDate")) && prop.Contains(_home.getProperty("SupportCallOpenDateEinde")))
+			{
+				temp = prop.IndexOf(_home.getProperty("SupportCallOpenDateEinde"));
+				prop.Remove(_home.getProperty("SupportCallOpenDateEinde"));
+			}
+			foreach (var pr in prop)
+			{
+				if (first)
+				{
+					foreach (var item in _homes2)
+					{
+						if (!(pr.Name.Contains("Date")))
+						{
+							if (pr.GetValue(item) != null && pr.GetValue(item).ToString().ToLower().Equals(filter[index].ToLower()))
+							{
+								result.Add(item);
+							}
+						}
+						else
+						{
+							if (!(dateDone))
+							{
+								DateTime start = DateTime.Parse(filter[index]);
+								DateTime end;
+								if (filter.Count-1 > index)
+								{
+									if(filter[index + 1].Contains("00:00:00"))
+										end = DateTime.Parse(filter[index + 1]);
+									else									
+										end = DateTime.MaxValue;
+									
+								}
+								else							
+									end = DateTime.MaxValue;
+								
+								DateTime nullableDate = item.SupportCallOpenDate;
+								if (pr.GetValue(item) != null && DateTime.Compare(item.SupportCallOpenDate, start) >= 0 && DateTime.Compare(nullableDate, end) <= 0)
+								{
+									result.Add(item);
+								}
+							}
+						}
+					}
+					if (temp != 0)
+						filter.RemoveAt(temp);
+					dateDone = true;
+					first = false;
+					index++;
+				}
+				else
+				{
+					foreach (var obj in result)
+					{
+						if (!(pr.Name.Contains("Date")))
+						{
+							if (pr.GetValue(obj) != null && pr.GetValue(obj).ToString().ToLower().Equals(filter[index].ToLower()))
+							{
+								resultTemp.Add(obj);
+							}
+						}
+						else
+						{
+							if (!(dateDone))
+							{
+								DateTime start = DateTime.Parse(filter[index]);
+								DateTime end = DateTime.Parse(filter[index + 1]);
+								if (pr.GetValue(obj) != null && obj.SupportCallOpenDate >= start && obj.SupportCallOpenDate <= end)
+								{
+									resultTemp.Add(obj);
+								}
+								dateDone = true;
+							}
+						}
+					}
+					result = resultTemp;
+					resultTemp = new List<Home>();
+					index++;
+				}
+			}
 
+			return result;
+		}
+		#endregion
 		#region Get method for Index
+		// Deze methode verzameld alle info voor index met maar 1 iteratie door de homes. Vroeger verliep dit met een iteratie door alle homes per property
+		// Dit is dus een stuk sneller (# homes * # Properties)
 		public Dictionary<string, List<object>> getPossibleChoices()
 		{
+			// object moet gebruikt worden als type in de lijst omdat er verschillende types bestaan (int,string,DateTime,bool,...)
 			IndexSelects = new Dictionary<string, List<object>>();
-			List<string> wantedProperties = new List<string> {"Year", "OrganizationNumber", "InvoicCenterOrganization", "GroupName", "PersonName", "SupportCallType", "SupportCallPriority", "SupportCallImpact", "SupportCallUrgency", "SupportCallStatus", "OpenedByUser", "AssignedToUser", "AssignedToQueue", "InvoiceStatus" };
+			// De properties die we wensen weer te geven.
+			List<string> wantedProperties = new List<string> { "Year", "OrganizationNumber", "InvoicCenterOrganization", "GroupName", "PersonName", "SupportCallType", "SupportCallPriority", "SupportCallImpact", "SupportCallUrgency", "SupportCallStatus", "OpenedByUser", "AssignedToUser", "AssignedToQueue", "InvoiceStatus" };
+			// Het selecteren van de gewenste properties adhv een LINQ query.
 			PropertyInfo[] properties = (PropertyInfo[])_home.GetProperties().Where(p => wantedProperties.Contains(p.Name)).ToArray();
+			// Het initialiseren van een nieuwe lijst voor elke geselecteerde property (anders krijgen we nullpointers)
 			foreach (var lijst in wantedProperties)
 			{
-				IndexSelects.Add(lijst,new List<object>());
+				IndexSelects.Add(lijst, new List<object>());
 			}
+			// Het overlopen van elke home en elke property per elke home voor het toevoegen van alle unieke mogelijkheden.
 			foreach (Home h in _homes)
 			{
 				foreach (var prop in properties)
@@ -51,6 +164,7 @@ namespace TrustTeamVersion4.Data.Repositories
 					if (!(prop.GetValue(h) == null | IndexSelects[prop.Name].Contains(prop.GetValue(h))))
 					{
 						IndexSelects[prop.Name].Add(prop.GetValue(h));
+						IndexSelects[prop.Name].Sort();
 					}
 
 				}
@@ -176,36 +290,23 @@ namespace TrustTeamVersion4.Data.Repositories
 		// Return alle unieke support call impacten die in de databank zitten
 		public List<string> getSupportCallImpacts()
 		{
-			List<string> impacts = new List<string>();
-			foreach (Home h in _homes)
-			{
-				if (!(h.SupportCallImpact == null | impacts.Exists(b => b == h.SupportCallImpact)))
-				{
-					impacts.Add(h.SupportCallImpact);
-				}
-			}
+			List<string> impacts = new List<string>() { "1 - Organization", "2 - Department", "3 - Employee", "4 - No impact", "Not Set" };
+
 			impacts.Sort();
 			return impacts;
 		}
 		// Return alle unieke urgenties die in de databank zitten
 		public List<string> getSupportCallUrgencies()
 		{
-			List<string> urgencies = new List<string>();
-			foreach (Home h in _homes)
-			{
-				if (!(h.SupportCallUrgency == null | urgencies.Exists(b => b == h.SupportCallUrgency)))
-				{
-					urgencies.Add(h.SupportCallUrgency);
-				}
-			}
-			urgencies.Sort();
+			List<string> urgencies = new List<string>() { "1 - Unable to Work", "2 - Critical Business Process Unavailable", "3 - Normal Business Process Unavailable", "4 - Incident, but Workaround Available", "5 - Service Request", "Not Set" };
+
 			return urgencies;
 		}
 		// Return alle unieke statussen die in de databank zitten
-		public List<string> getSupportCallStatusses()
+		public List<string> getSupportCallStatusses(IEnumerable<Home> homes)
 		{
 			List<string> statusses = new List<string>();
-			foreach (Home h in _homes)
+			foreach (Home h in homes)
 			{
 				if (!(h.SupportCallStatus == null | statusses.Exists(b => b == h.SupportCallStatus)))
 				{
@@ -216,10 +317,10 @@ namespace TrustTeamVersion4.Data.Repositories
 			return statusses;
 		}
 		// Return alle unieke call categoriën die in de databank zitten
-		public List<string> getSupportCallCategories()
+		public List<string> getSupportCallCategories(IEnumerable<Home> homes)
 		{
 			List<string> categories = new List<string>();
-			foreach (Home h in _homes)
+			foreach (Home h in homes)
 			{
 				if (!(h.SupportCallCategory == null | categories.Exists(b => b == h.SupportCallCategory)))
 				{
@@ -368,6 +469,7 @@ namespace TrustTeamVersion4.Data.Repositories
 		#region Other methods
 
 		//Telt het aantal properties die een waarde toegewezen kregen
+		// De value mag niet gelijk zijn aan false omdat anders boolean properties altijd worden geteld
 		public int GetAmountOfSetProperties(Home home)
 		{
 			int amount = 0;
@@ -412,14 +514,18 @@ namespace TrustTeamVersion4.Data.Repositories
 		#endregion
 
 		#region Methods for the graphs page
+		// De methode die de efficiency grafiek opstelt (taartdiagram)
+		// De array is : [[Closed,12][Open,4]...]
 		public string[,] GetEfficiency(IEnumerable<Home> homes)
-		{
+		{ // We tellen het aantal tickets dat er zijn per soort status. Counter telt de hoeveelste status we aan het overlopen zijn
+		  // Amount overloopt hoeveel tickets er zijn binnen deze status
 			int counter = 0;
 			int amount;
-			IEnumerable<string> statusses = this.getSupportCallStatusses();
+			IEnumerable<string> statusses = this.getSupportCallStatusses(homes);
 			string[,] result = new string[statusses.Count(), 2];
 			foreach (var status in statusses)
 			{
+				// Dit zou waarschijnlijk efficienter zijn met een LINQ querie. Maar momenteel geen prioriteit.
 				amount = 0;
 				foreach (var home in homes)
 				{
@@ -428,6 +534,7 @@ namespace TrustTeamVersion4.Data.Repositories
 						amount = amount + 1;
 					}
 				}
+				// Enkel toevoegen aan de resultset als er wel degelijk tickets in deze categorie voorkwamen.
 				if (amount > 0)
 				{
 					result[counter, 0] = status;
@@ -453,7 +560,7 @@ namespace TrustTeamVersion4.Data.Repositories
 			// Dit komt dus overeen met de array, zo zullen table[0,0] ,table[0,*] en table [*,0] dus leeg blijven
 			// IncidentNiv komt overeen met SupportCallUrgency, impact met SupportCallImpact en Interventiecat. met SupportCallPriority
 
-			int[,] table = new int[amountImpact+1, amountUrgency+1];
+			int[,] table = new int[amountImpact + 1, amountUrgency + 1];
 
 			foreach (var h in homes)
 			{
@@ -464,13 +571,13 @@ namespace TrustTeamVersion4.Data.Repositories
 					{
 						for (var j = 1; j <= amountUrgency; j++)
 						{
-							if(h.SupportCallUrgency.StartsWith(j.ToString()))
+							if (h.SupportCallUrgency.StartsWith(j.ToString()))
 							{
 								table[i, j]++;
 							}
 							if (h.SupportCallUrgency.StartsWith("N") & j == amountUrgency)
 							{
-								table[i,j]++;
+								table[i, j]++;
 							}
 						}
 					}
@@ -489,16 +596,16 @@ namespace TrustTeamVersion4.Data.Repositories
 						}
 					}
 				}
-			
+
 			}
 
 			return table;
 		}
 		// Telt de frequentie van elke categorie in een verzameling van objecten
-		public int[] GetCategoryCount(IEnumerable<Home> homes)
+		public int[] GetCategoryCount(IEnumerable<Home> homes, List<string> cat)
 		{
-			List<string> categories = this.getSupportCallCategories();
-			int amountOfCategories = this.getSupportCallCategories().Count();
+			List<string> categories = cat;
+			int amountOfCategories = cat.Count();
 			int[] amounts = new int[amountOfCategories];
 
 			categories.Sort();
@@ -520,7 +627,7 @@ namespace TrustTeamVersion4.Data.Repositories
 		// gaven problemen door hun fixed length waardoor ze zeer veel white space hebben en de lists gaven problemen bij het itereren.
 		// Hier is de eerste key telkens de groep en de tweede de persoon. De value is dan het aantal tickets dat geteld wordt bij die persoon.
 		//
-		public MultiKeyDictionary<string, string, int> GetPersonsPerGroup(IEnumerable<Home> homes ,List<string> gr, List<string> na)
+		public MultiKeyDictionary<string, string, int> GetPersonsPerGroup(IEnumerable<Home> homes, List<string> gr, List<string> na)
 		{
 			IEnumerable<Home> Filtered = homes;
 			Filtered.ForEach(h => h.RemoveNull());
@@ -529,11 +636,11 @@ namespace TrustTeamVersion4.Data.Repositories
 			List<string> names = na;
 			names.Add("");
 			var result = new MultiKeyDictionary<string, string, int>();
-			var newList = Filtered.GroupBy(x => new { x.GroupName, x.PersonName});
+			var newList = Filtered.GroupBy(x => new { x.GroupName, x.PersonName });
 
 			foreach (var y in newList)
 			{
-				if(y.ToList().Count > 0)
+				if (y.ToList().Count > 0)
 					result.Add(y.Key.GroupName, y.Key.PersonName, y.ToList().Count);
 			}
 
@@ -543,8 +650,8 @@ namespace TrustTeamVersion4.Data.Repositories
 		// Geeft de unieke groepen terug voor de meegegeven verzameling homes
 		public List<string> GetUniqueGroups(IEnumerable<Home> homes)
 		{
-		
-			
+
+
 			List<string> uniques = new List<string>();
 			foreach (Home h in homes)
 			{

@@ -13,6 +13,7 @@ namespace TrustteamVersion4.Models.ViewModels
 	public class GraphsViewModel 
 	{
 		#region properties
+		// Alle properties zijn properties die vereist zijn voor bepaalde grafieken/tabellen
 		[JsonProperty]
 		public List<string> impacts { get; set; }
 		[JsonProperty]
@@ -49,11 +50,14 @@ namespace TrustteamVersion4.Models.ViewModels
 		{
 
 		}
+		// De repository, de gefilterde objecten en de filter zelf zijn vereist. De repo voor de methoden de andere voor de data die ze bevatten
 		public GraphsViewModel(IHomeRepository repo, IEnumerable<Home> filtered, Home filter)
 		{
 			#region Injectie
 			this._filter = filter;
 			#endregion
+			//Deze async werd toegevoegd om te proberen van de pdf beter te laten werken maar ondertussen werd al ondekt dat de oorzaak hiervan niet in 
+			// de code ligt. Wel aan .net core 2.0
 			try
 			{
 				workAsync(repo, filtered);
@@ -70,6 +74,8 @@ namespace TrustteamVersion4.Models.ViewModels
 		{
 			try
 			{
+				// Overloopt de hele array van GetEfficiency en parsed de string terug naar een int. Dan worden beide waarden weer opgeslaan in een
+				// Property. De return waarde is voor het async verloop (een void kan niet async zijn)
 				int counter = 0;
 				string[,] efficiency = repo.GetEfficiency(filtered);
 				for (var g = 0; g < efficiency.Length / 2; g++)
@@ -102,18 +108,19 @@ namespace TrustteamVersion4.Models.ViewModels
 			return 1;
 		}
 		#endregion
-
+		// Roept gewoon methodes op van de repository en plaatst het resultaat in properties.
 		#region Aantal Per Categorie
 		private  void AantalPerCategorie(IHomeRepository repo, IEnumerable<Home> filtered)
 		{
-			Categories = repo.getSupportCallCategories();
-			NrPerCategory = repo.GetCategoryCount(filtered);
-			Categories.Sort();
+			Categories = repo.getSupportCallCategories(filtered);
+			NrPerCategory = repo.GetCategoryCount(filtered,Categories);
+			//Categories.Sort();
 		}
 
 		#endregion
 
 		#region GroupTable
+		// PIVOT tabel opstellen
 		private  void GroupTable(IHomeRepository repo, IEnumerable<Home> filtered)
 		{
 			uniqueGroups = repo.GetUniqueGroups(filtered);
@@ -124,6 +131,7 @@ namespace TrustteamVersion4.Models.ViewModels
 		#endregion
 
 		#region IncidentenTabel
+		//Opstellen incidentenTabel
 		private async Task<int> IncidentenTabel(IHomeRepository repo, IEnumerable<Home> filtered)
 		{
 			// Het aanpassen van de NULL string naar Not Set omdat het mooier oogt in de tabel
@@ -151,12 +159,14 @@ namespace TrustteamVersion4.Models.ViewModels
 		#endregion
 
 		#region IsNullObject
+		// Controleren of alle properties van een object null zijn.
 		public bool isNullObject()
 		{
 			int counter = 0;
 			var properties = this.GetType().GetProperties();
 			foreach (var p in properties)
 			{
+				//Met null valt niet te werken, vandaar eerst omzetten naar "null" string en dit vergelijken.
 				var value = p.GetValue(this, null) ?? "null";
 				if (value.Equals("null") | value.Equals(false))
 					counter++;
@@ -168,7 +178,7 @@ namespace TrustteamVersion4.Models.ViewModels
 				return false;
 		}
 		#endregion
-
+		// De methode die alle voorgaande methoden oproept om deze async uit te laten voeren. 
 		private async void workAsync(IHomeRepository repo, IEnumerable<Home> filtered)
 		{
 			Task<int> TaskOne = PieChart(repo, filtered);

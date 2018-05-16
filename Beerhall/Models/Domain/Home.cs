@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using TrustteamVersion4.Models.Extension;
@@ -161,6 +162,18 @@ namespace TrustTeamVersion4.Models.Domain
 		[JsonProperty]
 		[Display(Name = "Hours clientele worked on suppor call")]
 		public string HoursClienteleWorkedOnSupportCall { get; set; }
+		[JsonProperty]
+		[NoPrintAttribute]
+		[NotMapped]
+		public double HoursTillClosedDouble { get; set; }
+		[JsonProperty]
+		[NoPrintAttribute]
+		[NotMapped]
+		public double HoursInStatusOpenDouble { get; set; }
+		[JsonProperty]
+		[NoPrintAttribute]
+		[NotMapped]
+		public double HoursInvoiceCenterDouble { get; set; }
 		#endregion
 		#region ToString
 		// Het aanpassen van de ToString zodanig deze alle properties returnt met steeds de waarde erbij in volgend formaat:
@@ -169,8 +182,7 @@ namespace TrustTeamVersion4.Models.Domain
 		public override string ToString()
 		{
 			String result;
-			if (_PropertyInfos == null)
-				_PropertyInfos = this.GetType().GetProperties();
+			_PropertyInfos = this.GetType().GetFilteredProperties();
 
 			var sb = new StringBuilder();
 
@@ -223,6 +235,19 @@ namespace TrustTeamVersion4.Models.Domain
 
 			return temp;
 		}
+		//Opvragen van één property op basis van string
+		public PropertyInfo getProperty(string prop)
+		{
+			try
+			{
+				IEnumerable<PropertyInfo> _temp = this.GetProperties().Where(x => x.Name.Equals(prop));
+				return _temp.First();
+			}
+			catch (Exception e)
+			{
+				throw new Exception("Property not found : " + e.Message);
+			}
+		}
 		// Deze methode is er puur om te zorgen dat we een property hebben waar we de closed data vinden waar die nooit null kan zijn. Ze wordt ingesteld op de
 		// maximum waarde van DateTime in de plaats als ze null is, zo is ze wel nog steeds gemakkelijk te onderscheiden van de rest.
 		// Door dat er in de databank vaak null staat in deze kollom kon dit niet gewoon opgelost worden met 1 property omdat we zowel van DateTime? moeten gebruik
@@ -231,8 +256,8 @@ namespace TrustTeamVersion4.Models.Domain
 		{
 			if (this.SupportCallClosedDate == null)
 			{
-				this.SupportCallClosedDateNotNull = DateTime.MinValue;
-				this.SupportCallClosedDate = DateTime.MinValue;
+				this.SupportCallClosedDateNotNull = DateTime.MaxValue;
+				this.SupportCallClosedDate = DateTime.MaxValue;
 			}
 			if (this.SupportCallClosedDate != null)
 			{
@@ -243,7 +268,7 @@ namespace TrustTeamVersion4.Models.Domain
 			{
 
 				this.SupportCallClosedTimeNotNull = DateTime.MaxValue;
-				this.SupportCallClosedTime = DateTime.MinValue;
+				this.SupportCallClosedTime = DateTime.MaxValue;
 			}
 			if (this.SupportCallClosedTime != null)
 			{
@@ -268,13 +293,12 @@ namespace TrustTeamVersion4.Models.Domain
 		{
 			bool result = true;
 			int check = 0;
-			if (_PropertyInfos == null)
-				_PropertyInfos = this.GetType().GetProperties();
+			_PropertyInfos = this.GetType().GetProperties();
 			// De lus overloopt alle properties, als er eentje hiervan niet gelijk is aan null of de standaardwaarde, dan zal check gelijk worden gesteld aan 1
 			foreach (var prop in _PropertyInfos)
 			{
 				var value = prop.GetValue(this, null) ?? "null";
-				if (!(value.Equals("null")) & !(value.Equals(false)))
+				if (!(value.Equals("null")) & !(value.Equals(false)) & !(value.ToString().Equals("0")))
 				{
 					if (!(value.Equals(DateTime.MaxValue) | value.Equals(DateTime.MinValue) | value.Equals(new List<int>())))
 					{
@@ -289,20 +313,37 @@ namespace TrustTeamVersion4.Models.Domain
 
 			return result;
 		}
-
+		//These nullpointers are really getting to me
+		public void MakeDoublesActualDoubles()
+		{
+			if (this.HoursTillClosed.Equals("") | this.HoursTillClosed.Equals("NULL") | this.HoursTillClosed == null)
+				HoursTillClosedDouble = 0.00;
+			else
+				HoursTillClosedDouble = Double.Parse(HoursTillClosed);
+			if (this.HoursInStatusOpen.Equals("") | this.HoursInStatusOpen.Equals("NULL") | this.HoursInStatusOpen == null)
+				HoursInStatusOpenDouble = 0.00;
+			else
+				HoursInStatusOpenDouble = Double.Parse(HoursInStatusOpen);
+			if (this.HoursInvoiceCenter.Equals("") | this.HoursInvoiceCenter.Equals("NULL") | this.HoursInvoiceCenter == null)
+				HoursInvoiceCenterDouble = 0.00;
+			else
+				HoursInvoiceCenterDouble = Double.Parse(HoursInvoiceCenter);
+		}
 		//making sure if a string is null it's converted into a string value "null"
 		public void RemoveNull()
 		{
+			this.SetDateNotNull();
+			this.SetDoublesNotNull();
 			PropertyInfo[] _Properties = this.GetType().GetProperties();
 			foreach (var prop in _Properties)
 			{
-				this.SetDateNotNull();
-				this.SetDoublesNotNull();
 				if (prop.GetValue(this) == null)
 				{
 					prop.SetValue(this, "NULL");
 				}
-			}
+
+			}// moet erna want string mag geen null meer zijn
+			this.MakeDoublesActualDoubles();
 		}
 		// Controleren of de bool LastMonth true is, zoja, dan worden de correcte properties ingesteld op de juiste data.
 		public void CheckAndSetLastMonth()
@@ -314,7 +355,7 @@ namespace TrustTeamVersion4.Models.Domain
 				this.SupportCallOpenDateEinde = DateTime.Now;
 			}
 		}
-
+		// Een methode voor alle properties op te vragen als PropertyInfo type
 		public PropertyInfo[] GetProperties()
 		{
 			PropertyInfo[] value = this.GetType().GetProperties();
@@ -322,13 +363,14 @@ namespace TrustTeamVersion4.Models.Domain
 			return value;
 
 		}
-
-		public Dictionary<string,string> CutDates()
+		// Een methode voor het knippen van de data naar gewenste strings.
+		public Dictionary<string, string> CutDates()
 		{
+			this.SetDateNotNull();
 			Dictionary<string, string> cutDate = new Dictionary<string, string> { };
 			cutDate.Add("SupportCallOpenDate", this.SupportCallOpenDate.ToShortDateString());
 			cutDate.Add("SupportCallOpenTime", this.SupportCallOpenTime.ToShortTimeString());
-			cutDate.Add("SupportCallClosedDate",this.SupportCallClosedDateNotNull.ToShortDateString());
+			cutDate.Add("SupportCallClosedDate", this.SupportCallClosedDateNotNull.ToShortDateString());
 			cutDate.Add("SupportCallClosedTime", this.SupportCallClosedTimeNotNull.ToShortTimeString());
 			return cutDate;
 		}
