@@ -227,6 +227,10 @@
 			<a href="@Url.Action("PrintPdf", "Home")" target="_blank"><img src="~/images/pdf.png" width="40" /></a>
 		</div>
 	}
+	else
+	{
+		<img src="~/images/Logo.png" style="max-height: 50px; margin-top: -10px;" />
+	}
 
 	<!-- De incidenten tabel. De eerste foreach loop overloopt alle urgenties om deze in de table header te plaatsen.
 		 De tweede foreach loop overloopt alle verschillende impacten om deze in de eerste kolom te plaatsen.

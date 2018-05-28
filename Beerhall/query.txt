@@ -1,0 +1,247 @@
+declare @Organization varchar(max)
+
+declare @InterventionType1 varchar(max)
+
+declare @InterventionType2 varchar(max)
+
+declare @StartdateInc datetime2
+
+declare @EnddateNotInc datetime2
+
+
+
+set @Organization = '%SHOPINVEST%';           -- Use % for like
+
+set @InterventionType1 = 'I';           -- Use 'I' for Incident
+
+set @InterventionType2 = 'S';           -- Use 'S' for Service Request
+
+set @StartdateInc = '2018-01-01';        -- This date is included >= and used to select the correct ExportMonth
+
+set @EnddateNotInc = '2018-05-01';      -- This date is excluded < and used to select the correct ExportMonth
+
+
+
+IF OBJECT_ID('tempdb..#InvoiceCenterList') IS NOT NULL
+
+    DROP TABLE #InvoiceCenterList;
+
+
+
+SELECT InvoiceHistory.Number, InvoiceHistory.Organization, InvoiceOrganization.InvoiceNumber as InvoiceOrganizationNumber, InvoiceOrganization.Name as InvoiceOrganizationName,
+
+InvoiceHistory.[Invoice Status] as InvoiceStatus, InvoiceHistory.[Call Summary] as InvoiceCallSummary,
+
+YEAR(InvoiceMonth.ExportMonth) as InvoiceYear, MONTH(InvoiceMonth.ExportMonth) as InvoiceMonth,
+
+SUM(InvoiceHistory.[Total Minutes]) as TotalMinutes
+
+INTO #InvoiceCenterList
+
+  FROM [TRUSTSQ02\MSSHAREPOINT].[ClienteleITSM2009_Prod_System_Export].[dbo].[InvoiceHistory]
+
+  INNER JOIN [TRUSTSQ02\MSSHAREPOINT].[ClienteleITSM2009_Prod_System_Export].[dbo].InvoiceMonth on InvoiceMonth.ID = InvoiceHistory.ExportID
+
+  LEFT OUTER JOIN [TRUSTSQ02\MSSHAREPOINT].[ClienteleITSM2009_Prod_System_Export].[dbo].InvoiceOrganization on InvoiceOrganization.ID = [InvoiceHistory].InvoiceOrganizationId
+
+  WHERE InvoiceMonth.ExportMonth >= @StartdateInc and InvoiceMonth.ExportMonth < @EnddateNotInc
+
+  and InvoiceHistory.Organization like @Organization
+
+  and isnull(InvoiceHistory.ProviderId, 0) <> 6
+
+  GROUP BY InvoiceHistory.Number, InvoiceHistory.Organization, InvoiceOrganization.InvoiceNumber, InvoiceOrganization.Name, InvoiceHistory.[Call Summary], InvoiceHistory.[Invoice Status], YEAR(InvoiceMonth.ExportMonth), MONTH(InvoiceMonth.ExportMonth);
+
+
+
+With
+
+SupportCallList as
+
+(
+
+select
+
+#InvoiceCenterList.Number as InvoiceCenterNumber, #InvoiceCenterList.Organization as InvoicCenterOrganization, #InvoiceCenterList.InvoiceOrganizationNumber,
+
+#InvoiceCenterList.InvoiceOrganizationName, #InvoiceCenterList.InvoiceStatus, #InvoiceCenterList.TotalMinutes, #InvoiceCenterList.InvoiceCallSummary,
+
+#InvoiceCenterList.InvoiceMonth, #InvoiceCenterList.InvoiceYear,
+
+SupportCall.SupportCallID, SupportCall.OpenDate, SupportCall.CloseDate, SupportCall.Summary, SupportCall.Number, SupportCall.SupportCallType,
+
+SupportCall.PartyID, SupportCall.PriorityID, SupportCall.ImpactID, SupportCall.AssignToUserID, SupportCall.AssignToQueueID,
+
+SupportCall.UrgencyID, SupportCall.StatusID, SupportCall.OpenByUserID, FirstEvent.FirstEventSummary, FirstEvent.FirstEventNotes, SupportCall.SupportCallCategoryID
+
+from #InvoiceCenterList
+
+INNER JOIN ClienteleITSM_PROD_Application.dbo.SupportCall on SupportCall.Number = #InvoiceCenterList.Number
+
+--inner join ClienteleITSM_PROD_Application.dbo.Party on Party.PartyID = SupportCall.PartyID
+
+--inner join ClienteleITSM_PROD_Application.dbo.Organization on Organization.OrganizationID = Party.OrganizationID
+
+outer apply
+
+      (select top 1 SupportCallEvent.Summary as FirstEventSummary, SupportCallEvent.Notes as FirstEventNotes
+
+      from ClienteleITSM_PROD_Application.dbo.SupportCallEvent
+
+      --inner join SupportCallList on SupportCallList.SupportCallID = SupportCallEvent.SupportCallID
+
+      where SupportCallEvent.SupportCallID = SupportCall.SupportCallID
+
+      order by SupportCallEvent.OpenDate
+
+      ) as FirstEvent
+
+where
+
+--Organization.Name like @Organization
+
+--and ((SupportCall.OpenDate >= @StartdateInc and SupportCall.OpenDate < @EnddateNotInc) OR SupportCall.CloseDate is null)
+
+--and
+
+(SupportCall.SupportCallType = @InterventionType1 or SupportCall.SupportCallType = @InterventionType2)
+
+),
+
+StatusHistoryList as
+
+(
+
+Select SupportCallStatusHistoryList.SupportCallID, SUM(ISNULL(DATEDIFF(MINUTE,ISNULL(SupportCallStatusHistoryList.StartDate,GETDATE()), ISNULL(SupportCallStatusHistoryList.EndDate, GETDATE())),0)) as TimeInStatusOpen
+
+from ClienteleITSM_PROD_Application.dbo.SupportCallStatusHistoryList
+
+inner join SupportCallList on SupportCallList.SupportCallID = SupportCallStatusHistoryList.SupportCallID
+
+WHERE SupportCallStatusHistoryList.[Status] in ('New', 'Assigned', 'In Process', 'Offerte Aanvraag', 'Re-Opened')
+
+GROUP BY SupportCallStatusHistoryList.SupportCallID
+
+),
+
+TotalTime as
+
+(
+
+Select (SUM(isnull(SupportCallEvent.EventTime, 0)) + SUM(isnull(SupportCallEvent.ExtraTime, 0))) as TotalSupportCallTime, SupportCallEvent.SupportCallID
+
+from ClienteleITSM_PROD_Application.dbo.SupportCallEvent
+
+inner join SupportCallList on SupportCallList.SupportCallID = SupportCallEvent.SupportCallID
+
+GROUP BY SupportCallEvent.SupportCallID
+
+)
+
+select
+
+SupportCallList.InvoiceMonth as [Month],
+
+SupportCallList.InvoiceYear as [Year],
+
+Organization.OrganizationNumber,
+
+SupportCallList.InvoicCenterOrganization,
+
+Groups.Name as GroupName, Person.FullName as PersonName,
+
+SupportCallList.InvoiceCenterNumber as Number,
+
+CASE WHEN SupportCallList.SupportCallType = 'I'
+
+THEN 'Incident'
+
+ELSE 'Service Request'
+
+END as SupportCallType,
+
+ValueListEntry.Description as SupportCallPriority,
+
+ValueListEntry2.Entry as SupportCallImpact,
+
+ValueListEntry3.Entry as SupportCallUrgency,
+
+SupportCallStatus.Name as SupportCallStatus,
+
+SupportCallCategory.Name as SupportCallCategory,
+
+CONVERT(VARCHAR, SupportCallList.OpenDate, 103) as SupportCallOpenDate,
+
+SUBSTRING(CAST(CAST(SupportCallList.OpenDate as Time(0)) as varchar), 1, 5) as SupportCallOpenTime,
+
+CONVERT(VARCHAR, SupportCallList.CloseDate, 103) as SupportCallClosedDate,
+
+SUBSTRING(CAST(CAST(SupportCallList.CloseDate as Time(0)) as varchar), 1, 5) as SupportCallClosedTime,
+
+CAST(CAST(DATEDIFF(MINUTE,SupportCallList.OpenDate, SupportCallList.CloseDate) as decimal(18,2))/60 as decimal(18,2)) as HoursTillClosed,
+
+CAST(CAST(ISNULL(StatusHistoryList.TimeInStatusOpen,0) as decimal(18,2))/60 as decimal(18,2)) as HoursInStatusOpen,
+
+
+
+CAST(CAST(ISNULL(SupportCallList.TotalMinutes, 0)  as decimal(18,2))/60 as decimal(18,2)) as HoursInvoiceCenter,
+
+SupportCallList.InvoiceCallSummary,
+
+
+
+OpenedByUser.DisplayName as OpenedByUser,
+
+AssignedToUser.DisplayName as AssignedToUser,
+
+[Queue].Name as AssignedToQueue,
+
+SupportCallList.FirstEventSummary,
+
+
+
+--'"' + SupportCallList.FirstEventNotes + '"' as FirstEventNotes,
+
+SupportCallList.Summary as ClienteleSupportCallSummary,
+
+SupportCallList.InvoiceOrganizationName,
+
+SupportCallList.InvoiceOrganizationNumber,
+
+SupportCallList.InvoiceStatus,
+
+CAST(CAST(ISNULL(TotalTime.TotalSupportCallTime,0) as decimal(18,2))/60 as decimal(18,2)) as HoursClienteleWorkedOnSupportCall
+
+
+
+from SupportCallList
+
+inner join ClienteleITSM_PROD_Application.dbo.Party on Party.PartyID = SupportCallList.PartyID
+
+inner join ClienteleITSM_PROD_Application.dbo.Organization on Organization.OrganizationID = Party.OrganizationID
+
+left outer join ClienteleITSM_PROD_Application.dbo.Groups on Groups.GroupID = Party.GroupID
+
+left outer join ClienteleITSM_PROD_Application.dbo.Person on Person.PersonID = Party.PersonID
+
+left outer join [ClienteleITSM_PROD_Application].[dbo].[ValueListEntry] on ValueListEntry.ValueListEntryID = SupportCallList.PriorityID
+
+left outer join [ClienteleITSM_PROD_Application].[dbo].[ValueListEntry] ValueListEntry2 on ValueListEntry2.ValueListEntryID = SupportCallList.ImpactID
+
+left outer join [ClienteleITSM_PROD_Application].[dbo].[ValueListEntry] ValueListEntry3 on ValueListEntry3.ValueListEntryID = SupportCallList.UrgencyID
+
+inner join ClienteleITSM_PROD_Application.dbo.SupportCallStatus on SupportCallStatus.SupportCallStatusID = SupportCallList.StatusID
+
+left outer join ClienteleITSM_PROD_Application.dbo.ApplicationUser OpenedByUser on OpenedByUser.ApplicationUserID = SupportCallList.OpenByUserID
+
+left outer join ClienteleITSM_PROD_Application.dbo.ApplicationUser AssignedToUser on AssignedToUser.ApplicationUserID = SupportCallList.AssignToUserID
+
+left outer join ClienteleITSM_PROD_Application.dbo.[Queue] on [Queue].QueueID = SupportCallList.AssignToQueueID
+
+left outer join ClienteleITSM_PROD_Application.dbo.SupportCallCategory on SupportCallCategory.SupportCallCategoryID = SupportCallList.SupportCallCategoryID
+
+left outer join StatusHistoryList on StatusHistoryList.SupportCallID = SupportCallList.SupportCallID
+
+left outer join TotalTime on TotalTime.SupportCallID = SupportCallList.SupportCallID
+
+order by 2, 1, InvoicCenterOrganization, InvoiceOrganizationName, GroupName, PersonName, SupportCallList.OpenDate

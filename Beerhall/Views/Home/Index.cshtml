@@ -1,7 +1,6 @@
 ﻿@model TrustTeamVersion4.Models.Domain.Home
 @{
 	ViewData["Title"] = "Kies uw gewenste data om op te filteren";
-	Dictionary<string, List<object>> selections = (Dictionary<string, List<object>>)ViewData["Selections"];
 }
 
 <!-- De lijst van zaken waarop kan gefiltert worden.-->
@@ -10,63 +9,59 @@
 <form class="form-group" method="post">
 	<div class=" col-lg-5">
 		<label> Ticket Number </label>
-		<input asp-for="Number" class="form-control" style="height:34px;" value="" placeholder="-- Ticker Number --">
-	</div>
-	<div class=" col-lg-5">
-		<label> Year </label>
-		<input asp-for="Year" class="form-control" style="height:34px;" value="" placeholder="-- Jaartal --">
+		<input asp-for="Number" class="form-control NotInitial" style="height:34px;" value="" placeholder="-- Ticker Number --" disabled="">
 	</div>
 	<div class=" col-lg-5">
 		<label> Organization Number </label>
-		<input asp-for="OrganizationNumber" class="form-control" style="height:34px;" value="" placeholder="-- Nummer organisatie --">
+		<input asp-for="OrganizationNumber" class="form-control NotInitial" style="height:34px;" value="" placeholder="-- Nummer organisatie --" disabled="">
 	</div>
 	<div class=" col-lg-5">
 		<label> Organization name </label>
-		<input asp-for="InvoicCenterOrganization" class="form-control" style="height:34px;" value="" placeholder="-- Naam organisatie --">
+		<input asp-for="InvoicCenterOrganization" class="form-control Initial" style="height:34px;" value="" placeholder="-- Naam organisatie --">
 	</div>
 	<div class=" col-lg-5">
 		<label> Group name </label>
-		<input asp-for="GroupName" class="form-control" style="height:34px;" value="" placeholder="-- groepnaam --">
+		<input asp-for="GroupName" class="form-control NotInitial" style="height:34px;" value="" placeholder="-- groepnaam --" disabled="">
 	</div>
 	<div class=" col-lg-5">
 		<label> Person Names </label>
-		<input asp-for="PersonName" class="form-control" style="height:34px;" value="" placeholder="-- Persoonsnaam --">
+		<input asp-for="PersonName" class="form-control NotInitial" style="height:34px;" value="" placeholder="-- Persoonsnaam --" disabled="">
 	</div>
 	<div class=" col-lg-5">
 		<label> Support call types </label>
-		<input asp-for="SupportCallType" class="form-control" style="height:34px;" value="" placeholder="-- Type support call --">
+		<input asp-for="SupportCallType" class="form-control NotInitial" style="height:34px;" value="" placeholder="-- Type support call --" disabled="">
 	</div>
 	<div class=" col-lg-5">
 		<label> Support call Priorities </label>
-		<input asp-for="SupportCallPriority" class="form-control" style="height:34px;" value="" placeholder="-- Prioriteit support call --">
+		<input asp-for="SupportCallPriority" class="form-control NotInitial" style="height:34px;" value="" placeholder="-- Prioriteit support call --" disabled="">
 	</div>
 	<div class=" col-lg-5">
 		<label> Support call Impacts </label>
-		<input asp-for="SupportCallImpact" class="form-control" style="height:34px;" value="" placeholder="-- Impact support call --">
+		<input asp-for="SupportCallImpact" class="form-control NotInitial" style="height:34px;" value="" placeholder="-- Impact support call --" disabled="">
 	</div>
 	<div class=" col-lg-5">
 		<label> Support call Urgencies </label>
-		<input asp-for="SupportCallUrgency" class="form-control" style="height:34px;" value="" placeholder="-- Urgentie support call --">
+		<input asp-for="SupportCallUrgency" class="form-control NotInitial" style="height:34px;" value="" placeholder="-- Urgentie support call --" disabled="">
 	</div>
 	<div class=" col-lg-5">
 		<label> Support call statusses </label>
-		<input asp-for="SupportCallStatus" class="form-control" style="height:34px;" value="" placeholder="-- Status support call--">
+		<input asp-for="SupportCallStatus" class="form-control NotInitial" style="height:34px;" value="" placeholder="-- Status support call--" disabled="">
 	</div>
 	<div class=" col-lg-5">
 		<label> Opened by users </label>
-		<input asp-for="OpenedByUser" class="form-control" style="height:34px;" value="" placeholder="-- Geopend door --">
+		<input asp-for="OpenedByUser" class="form-control NotInitial" style="height:34px;" value="" placeholder="-- Geopend door --" disabled="">
 	</div>
 	<div class=" col-lg-5">
 		<label> Assigned to users </label>
-		<input asp-for="AssignedToUser" class="form-control" style="height:34px;" value="" placeholder="-- Toegewezen persoon --">
+		<input asp-for="AssignedToUser" class="form-control NotInitial" style="height:34px;" value="" placeholder="-- Toegewezen persoon --" disabled="">
 	</div>
 	<div class=" col-lg-5">
 		<label> Assigned to Queus </label>
-		<input asp-for="AssignedToQueue" class="form-control" style="height:34px;" value="" placeholder="-- Toegewezen queue --">
+		<input asp-for="AssignedToQueue" class="form-control NotInitial" style="height:34px;" value="" placeholder="-- Toegewezen queue --" disabled="">
 	</div>
 	<div class=" col-lg-5">
 		<label> Invoice Statusses</label>
-		<input asp-for="InvoiceStatus" class="form-control" style="height:34px;" value="" placeholder="-- Status invoice --">
+		<input asp-for="InvoiceStatus" class="form-control NotInitial "  style="height:34px;" value="" placeholder="-- Status invoice --" disabled="">
 	</div>
 	<div style="margin: 5px; margin-bottom: 15px;">
 		<label>Datum open begin</label>
@@ -75,20 +70,49 @@
 		@Html.TextBox("SupportCallOpenDateEinde", null, new { @class = "datefield", type = "date", @id = "date2", disabled = "" })
 	</div>
 	<b style="margin-top: 10px;">Voorbije maand: </b>@Html.CheckBoxFor(m => m.LastMonth, new { onchange = "toggleDisabled(this.checked)" })
-	
+
 	<br />
 	<button class="btn btn-primary" type="submit" asp-action="Table" style="margin: 5px;">Filter</button>
 	<button asp-action="Graphs" class="btn btn-primary" type="submit" style="margin: 5px;">Graphs & Information</button>
 	<a asp-action="Reset" class="btn btn-default" style="margin: 5px;">Reset</a>
 </form>
-
-
+<div class="tooltip" style="height: 100%;"><img src="~/images/question.png" style="height: 35px; width: 35px;" />
+	<span  class="tooltiptext">
+		Gelieve initieel een bedrijf en periode (enkel startdatum voldoet) te selecteren. Als u dan terugkeert naar deze pagina zult u de mogelijkheid hebben om
+		op de overige eigenschappen te filteren. Reset staat u toe om een nieuw bedrijf / nieuwe periode te kiezen.
+	</span>
+</div>
 <script>
 	function toggleDisabled(_checked) {
 		document.getElementById('date1').disabled = _checked ? true : false;
 	}
 	function toggleDate(_changed) {
 		document.getElementById('date2').disabled = _changed ? false : true;
-
+		
 	}
+
 </script>
+<script type="text/javascript">
+	function toggleInitial() {
+		var listIni = document.getElementsByClassName('NotInitial');
+		for (var i = 0, item; item = listIni[i]; i++) {
+			item.disabled = true;
+		}
+
+		document.getElementsByClassName('Initial')[0].disabled = false;
+	}
+	window.onload = toggleInitial;
+</script>
+@if (Model.FirstFilter == true)
+{
+<script type="text/javascript">
+	function toggleNotInitial() {
+		var listNotIni = document.getElementsByClassName('NotInitial');
+		for (var i = 0, item; item = listNotIni[i]; i++) {
+			item.disabled = false;
+		}
+		document.getElementsByClassName('Initial')[0].disabled = true;
+	}
+	window.onload = toggleNotInitial;
+</script>
+}

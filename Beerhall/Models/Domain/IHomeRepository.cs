@@ -6,11 +6,11 @@ namespace TrustTeamVersion4.Models.Domain
 {
 	public interface IHomeRepository
 	{// Uitleg voor alle methodes is te vinden in HomeRepository
-		IEnumerable<Home> getFiltered(string[] property, List<string> filter);
+		IEnumerable<Home> InitialFilter(Home home);
+		IEnumerable<Home> getFiltered(string[] property, List<string> filter, IEnumerable<Home> initial);
 		IEnumerable<Home> GetAll();
-		Dictionary<string, List<object>> getPossibleChoices();
-		List<double?> GetNumbers();
-		List<double?> GetYear();
+		List<int> GetNumbers();
+		List<int> GetYear();
 		List<string> GetOrganizationNumbers();
 		List<string> getInvoiceCenterOrganizations();
 		List<string> getGroupNames();

@@ -45,6 +45,8 @@
 			- De counter zorgt gewoon voor een extra kolom waarin het aantal rijen wordt geteld.
 			- -->
 		@{ int counter = 1;
+
+			string text;
 			Dictionary<string, string> cutDate;
 			List<string> dateToCut = new List<string> { "SupportCallOpenDate", "SupportCallOpenTime", "SupportCallClosedDate", "SupportCallClosedTime" };
 			foreach (var item in Model.Data)
@@ -56,18 +58,33 @@
 					@{
 						foreach (var prop in Model.Properties)
 						{
-							string text = prop.GetValue(item) == null ? "" : prop.GetValue(item).ToString();
-							if (text.Equals("NULL"))
+							if (prop.GetValue(item) == null)
 							{
-								<td></td>
+								text = "";
 							}
-							else if (Model.IsShown(prop.Name) && !(dateToCut.Contains(prop.Name)) && !text.Equals("NULL"))
+							else if (prop.GetValue(item).ToString().Equals("NULL") | prop.GetValue(item).ToString().Contains("2999"))
+							{
+								text = "";
+							}
+							else
+							{
+								text = prop.GetValue(item).ToString();
+							}
+
+							if (Model.IsShown(prop.Name) && !(dateToCut.Contains(prop.Name)) && (!text.Equals("NULL")))
 							{
 								<td> @text </td>
 							}
 							else if (Model.IsShown(prop.Name) && dateToCut.Contains(prop.Name) && !text.Equals("NULL"))
 							{
-								<td> @cutDate[prop.Name] </td>
+								if (text.Equals(""))
+								{
+									<td>@text</td>
+								}
+								else
+								{
+									<td> @cutDate[prop.Name] </td>
+								}
 							}
 
 

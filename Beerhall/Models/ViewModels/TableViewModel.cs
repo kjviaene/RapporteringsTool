@@ -36,16 +36,24 @@ namespace TrustteamVersion4.Models.ViewModels
 			}
 
 		}
+		[JsonProperty]
+		public string FilterString { get; set; }
 		#endregion
 		#region Variabels
 		// Properties die niet dienen getoond worden in de tabel
-		private List<string> _notPrintedProps = new List<string> {"HoursInStatusOpenDouble", "HoursInvoiceCenterDouble","HoursTillClosedDouble", "LastMonth", "SupportCallOpenDateEinde", "SupportCallClosedDateNotNull", "SupportCallClosedTimeNotNull", "AssignedToQueue", "FirstEventSummary", "HoursClienteleWorkedOnSupportCall", "ClosedTabs" };
+		private List<string> _notPrintedProps = new List<string> {"HoursInStatusOpenDouble", "HoursInvoiceCenterDouble","HoursTillClosedDouble", "LastMonth", "SupportCallOpenDateEinde", "SupportCallClosedDateNotNull", "SupportCallClosedTimeNotNull", "AssignedToQueue", "FirstEventSummary", "HoursClienteleWorkedOnSupportCall", "ClosedTabs", "FirstFilter" };
 		private PropertyInfo _propHolder;
 		private IEnumerable<Home> _sortChecker = Enumerable.Empty<Home>();
 		private List<string> _avoidNullClosedColumns = new List<string>();
 		private Home _emptyHome = new Home();
 		#endregion
 
+		#region Constructors
+		public TableViewModel()
+		{
+			this.Properties = _emptyHome.GetProperties();
+			this.PropertiesAsString = _emptyHome.getProperties();
+		}
 		// injecteren van data. IEnumerable omzetten naar List
 		// de try catch zorgt ervoor dat indien er een null object werd meegegeven als filter, de data van een emptyhome wordt genomen.
 		public TableViewModel(IEnumerable<Home> data, Home filter)
@@ -55,15 +63,17 @@ namespace TrustteamVersion4.Models.ViewModels
 			{
 				this.Properties = filter.GetProperties();
 				this.PropertiesAsString = filter.getProperties();
+				this.FilterString = filter.ToString();
 			}
 			catch (Exception e)
 			{
 
 				this.Properties = _emptyHome.GetProperties();
 				this.PropertiesAsString = _emptyHome.getProperties();
+				this.FilterString = "";
 			}
 		}
-
+		#endregion
 		// Moet het meegegeven object getoond worden in de tabel?
 		public bool IsShown(string prop)
 		{
@@ -93,10 +103,14 @@ namespace TrustteamVersion4.Models.ViewModels
 			}// Als de tijden moeten apart gesorteerd worden omdat deze achter de schermen volledige DateTime objecten zijn.
 			// Dus als hier op wordt gefilterd, dan wordt gefilterd op de datum en de tijd, terwijl de datum meestal verkeerd is
 			// en ons enkel de tijd interreseert
-			if(!(_propHolder.Name.Equals("SupportCallOpenTime") | _propHolder.Name.Equals("SupportCallClosedTime") | _propHolder.Name.Equals("HoursTillClosed") | _propHolder.Name.Equals("HoursInStatusOpen") | _propHolder.Name.Equals("HoursInvoiceCenter")))
+			if(!(_propHolder.Name.Equals("SupportCallOpenTime") | _propHolder.Name.Equals("SupportCallClosedTime") | _propHolder.Name.Equals("HoursTillClosed") | _propHolder.Name.Equals("HoursInStatusOpen") | _propHolder.Name.Equals("HoursInvoiceCenter") | _propHolder.Name.Equals("SupportCallOpenDate") | _propHolder.Name.Equals("SupportCallClosedDate")))
 			_sortChecker = (IEnumerable<Home>)_sortChecker.OrderBy(h => _propHolder.GetValue(h));
+			else if (_propHolder.Name.Equals("SupportCallClosedDate"))
+				_sortChecker = (IEnumerable<Home>)_sortChecker.OrderBy(h => DateTime.Parse(h.SupportCallClosedDate));
+			else if (_propHolder.Name.Equals("SupportCallOpenDate"))
+				_sortChecker = (IEnumerable<Home>)_sortChecker.OrderBy(h => DateTime.Parse(h.SupportCallOpenDate));
 			else if (_propHolder.Name.Equals("SupportCallOpenTime"))
-				_sortChecker = (IEnumerable<Home>)_sortChecker.OrderBy(h => h.SupportCallOpenTime.TimeOfDay);
+				_sortChecker = (IEnumerable<Home>)_sortChecker.OrderBy(h => DateTime.Parse(h.SupportCallOpenTime.Split(" ")[1]));
 			else if (_propHolder.Name.Equals("SupportCallClosedTime"))
 				_sortChecker = (IEnumerable<Home>)_sortChecker.OrderBy(h => h.SupportCallClosedTimeNotNull.TimeOfDay);
 			else if (_propHolder.Name.Equals("HoursTillClosed"))
@@ -108,10 +122,14 @@ namespace TrustteamVersion4.Models.ViewModels
 			// Als het al eens eerder gesorteerd id moet het omgekeerd gesorteerd worden.
 			if (_sortChecker.SequenceEqual(objects))
 			{
-				if (!(_propHolder.Name.Equals("SupportCallOpenTime") | _propHolder.Name.Equals("SupportCallClosedTime") | _propHolder.Name.Equals("HoursTillClosed") | _propHolder.Name.Equals("HoursInStatusOpen") | _propHolder.Name.Equals("HoursInvoiceCenter")))
+				if (!(_propHolder.Name.Equals("SupportCallOpenTime") | _propHolder.Name.Equals("SupportCallClosedTime") | _propHolder.Name.Equals("HoursTillClosed") | _propHolder.Name.Equals("HoursInStatusOpen") | _propHolder.Name.Equals("HoursInvoiceCenter") | _propHolder.Name.Equals("SupportCallOpenDate") | _propHolder.Name.Equals("SupportCallClosedDate")))
 					_sortChecker = (IEnumerable<Home>)_sortChecker.OrderByDescending(h => _propHolder.GetValue(h));
+				else if (_propHolder.Name.Equals("SupportCallClosedDate"))
+					_sortChecker = (IEnumerable<Home>)_sortChecker.OrderByDescending(h => DateTime.Parse(h.SupportCallClosedDate));
+				else if (_propHolder.Name.Equals("SupportCallOpenDate"))
+					_sortChecker = (IEnumerable<Home>)_sortChecker.OrderByDescending(h => DateTime.Parse(h.SupportCallOpenDate));
 				else if (_propHolder.Name.Equals("SupportCallOpenTime"))
-					_sortChecker = (IEnumerable<Home>)_sortChecker.OrderByDescending(h => h.SupportCallOpenTime.TimeOfDay);
+					_sortChecker = (IEnumerable<Home>)_sortChecker.OrderByDescending(h => h.SupportCallOpenTime.Split(" ")[1]);
 				else if (_propHolder.Name.Equals("SupportCallClosedTime"))
 					_sortChecker = (IEnumerable<Home>)_sortChecker.OrderByDescending(h => h.SupportCallClosedTimeNotNull.TimeOfDay);
 				else if (_propHolder.Name.Equals("HoursTillClosed"))

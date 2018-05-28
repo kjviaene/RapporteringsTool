@@ -915,3 +915,40 @@ public List<string> getSupportCallUrgencies()
   return urgencies;
 }
 ```
+## Methode voor het ophalen van index dropdowns, is weg omdat index nu geen dropdowns meer heeft
+```
+#region Get method for Index
+		// Deze methode verzameld alle info voor index met maar 1 iteratie door de homes. Vroeger verliep dit met een iteratie door alle homes per property
+		// Dit is dus een stuk sneller (# homes * # Properties)
+		public Dictionary<string, List<object>> getPossibleChoices()
+		{
+			// object moet gebruikt worden als type in de lijst omdat er verschillende types bestaan (int,string,DateTime,bool,...)
+			IndexSelects = new Dictionary<string, List<object>>();
+			// De properties die we wensen weer te geven.
+			List<string> wantedProperties = new List<string> { "Year", "OrganizationNumber", "InvoicCenterOrganization", "GroupName", "PersonName", "SupportCallType", "SupportCallPriority", "SupportCallImpact", "SupportCallUrgency", "SupportCallStatus", "OpenedByUser", "AssignedToUser", "AssignedToQueue", "InvoiceStatus" };
+			// Het selecteren van de gewenste properties adhv een LINQ query.
+			PropertyInfo[] properties = (PropertyInfo[])_home.GetProperties().Where(p => wantedProperties.Contains(p.Name)).ToArray();
+			// Het initialiseren van een nieuwe lijst voor elke geselecteerde property (anders krijgen we nullpointers)
+			foreach (var lijst in wantedProperties)
+			{
+				IndexSelects.Add(lijst, new List<object>());
+			}
+			// Het overlopen van elke home en elke property per elke home voor het toevoegen van alle unieke mogelijkheden.
+			foreach (Home h in _homes)
+			{
+				foreach (var prop in properties)
+				{
+					if (!(prop.GetValue(h) == null | IndexSelects[prop.Name].Contains(prop.GetValue(h))))
+					{
+						IndexSelects[prop.Name].Add(prop.GetValue(h));
+						IndexSelects[prop.Name].Sort();
+					}
+
+				}
+
+			}
+
+			return IndexSelects;
+		}
+		#endregion
+```

@@ -26,17 +26,17 @@ namespace TrustTeamVersion4.Models.Domain
 		// De NoPrintAttribute tag zorgt ervoor dat deze property niet in de excel wordt weergegeven.
 		[JsonProperty]
 		[Display(Name = "Nummer ticket")]
-		public Double? Number { get; set; }
+		public int Number { get; set; }
 		[JsonProperty]
 		[NotMapped]
 		[NoPrintAttribute]
 		public bool LastMonth { get; set; }
 		[JsonProperty]
 		[Display(Name = "Maand")]
-		public Double? Month { get; set; }
+		public int Month { get; set; }
 		[JsonProperty]
 		[Display(Name = "Jaartal")]
-		public Double? Year { get; set; }
+		public int Year { get; set; }
 		[JsonProperty]
 		[Display(Name = "Nummer Organisatie")]
 		public string OrganizationNumber { get; set; }
@@ -69,14 +69,14 @@ namespace TrustTeamVersion4.Models.Domain
 		public string SupportCallCategory { get; set; }
 		[JsonProperty]
 		//Deze dates zijn nooit null. Is verplicht om in te vullen bij de tickets, dus hier zijn geen maatregelen nodig.
-		public DateTime SupportCallOpenDate { get; set; }
+		public string SupportCallOpenDate { get; set; }
 		[JsonProperty]
 		[NotMapped]
 		public DateTime SupportCallOpenDateEinde { get; set; }
 		[JsonProperty]
-		public DateTime SupportCallOpenTime { get; set; }
+		public string SupportCallOpenTime { get; set; }
 		[JsonProperty]
-		public DateTime? SupportCallClosedDate { get; set; }
+		public string SupportCallClosedDate { get; set; }
 		// De tag "NotMapped" is er omdat anders SQL een error geeft aangezien er geen gelijknamige kolom bestaat in de databank
 		// Deze property is echter vereist als we met deze data willen werken (uitleg zie onderaan)
 		[JsonProperty]
@@ -101,7 +101,7 @@ namespace TrustTeamVersion4.Models.Domain
 		}
 		[JsonProperty]
 		[Display(Name = "Tijdstip sluiting")]
-		public DateTime? SupportCallClosedTime { get; set; }
+		public string SupportCallClosedTime { get; set; }
 		// De tag "NotMapped" is er omdat anders SQL een error geeft aangezien er geen gelijknamige kolom bestaat in de databank
 		// Deze property is echter vereist als we met deze data willen werken (uitleg zie onderaan)
 		[JsonProperty]
@@ -125,13 +125,13 @@ namespace TrustTeamVersion4.Models.Domain
 		}
 		[JsonProperty]
 		[Display(Name = "Hours Till Closed")]
-		public string HoursTillClosed { get; set; }
+		public decimal? HoursTillClosed { get; set; }
 		[JsonProperty]
 		[Display(Name = "Hours in status open")]
-		public string HoursInStatusOpen { get; set; }
+		public decimal? HoursInStatusOpen { get; set; }
 		[JsonProperty]
 		[Display(Name = "hours invoice center")]
-		public string HoursInvoiceCenter { get; set; }
+		public decimal? HoursInvoiceCenter { get; set; }
 		[JsonProperty]
 		[Display(Name = "Samenvatting")]
 		public string InvoiceCallSummary { get; set; }
@@ -155,13 +155,13 @@ namespace TrustTeamVersion4.Models.Domain
 		public string InvoiceOrganizationName { get; set; }
 		[JsonProperty]
 		[Display(Name = "Invoice Organization Number")]
-		public Double? InvoiceOrganizationNumber { get; set; }
+		public int? InvoiceOrganizationNumber { get; set; }
 		[JsonProperty]
 		[Display(Name = "Status invoice")]
 		public string InvoiceStatus { get; set; }
 		[JsonProperty]
 		[Display(Name = "Hours clientele worked on suppor call")]
-		public string HoursClienteleWorkedOnSupportCall { get; set; }
+		public decimal HoursClienteleWorkedOnSupportCall { get; set; }
 		[JsonProperty]
 		[NoPrintAttribute]
 		[NotMapped]
@@ -174,6 +174,10 @@ namespace TrustTeamVersion4.Models.Domain
 		[NoPrintAttribute]
 		[NotMapped]
 		public double HoursInvoiceCenterDouble { get; set; }
+		[JsonProperty]
+		[NoPrintAttribute]
+		[NotMapped]
+		public bool FirstFilter { get; set; }
 		#endregion
 		#region ToString
 		// Het aanpassen van de ToString zodanig deze alle properties returnt met steeds de waarde erbij in volgend formaat:
@@ -189,19 +193,22 @@ namespace TrustTeamVersion4.Models.Domain
 			foreach (var info in _PropertyInfos)
 			{
 				var value = info.GetValue(this, null) ?? "null";
-				if (!(value.Equals("null")) & !(value.Equals(true)) & !(value.Equals(false)))
+				if (!(value.Equals("null")) & !(value.Equals(true)) & !(value.Equals(false)) & !(value.Equals(0)) & !(value.Equals("0")) & !(value.Equals(Decimal.Zero)))
 				{
 					// Controle om te zorgen dat de DateTime niet sowieso wordt afgeprint omdat dit nooit null is maar wordt ingesteld op de 
 					// min en max waarde
 					if (!(value.Equals(DateTime.MaxValue) | value.Equals(DateTime.MinValue)))
 					{
-						if (value.ToString() == SupportCallOpenDate.ToString())
+						if (value.ToString() == SupportCallOpenDate)
 						{
-							sb.Append("Begin periode: " + value.ToString().Remove(10) + ", ");
+							sb.Append("Begin periode: " + value.ToString() + ", ");
 						}
 						else if (value.ToString() == SupportCallOpenDateEinde.ToString())
 						{
-							sb.Append("Einde periode: " + value.ToString().Remove(10) + ", ");
+							if(value.ToString().Length > 10)
+								sb.Append("Einde periode: " + value.ToString().Remove(10) + ", ");
+							else
+								sb.Append("Einde periode: " + value.ToString() + ", ");
 						}
 						else
 						{
@@ -257,22 +264,22 @@ namespace TrustTeamVersion4.Models.Domain
 			if (this.SupportCallClosedDate == null)
 			{
 				this.SupportCallClosedDateNotNull = DateTime.MaxValue;
-				this.SupportCallClosedDate = DateTime.MaxValue;
+				this.SupportCallClosedDate = "2999-01-01";
 			}
 			if (this.SupportCallClosedDate != null)
 			{
-				this.SupportCallClosedDateNotNull = (DateTime)this.SupportCallClosedDate;
+				this.SupportCallClosedDateNotNull = DateTime.Parse(this.SupportCallClosedDate);
 			}
 
 			if (this.SupportCallClosedTime == null)
 			{
 
 				this.SupportCallClosedTimeNotNull = DateTime.MaxValue;
-				this.SupportCallClosedTime = DateTime.MaxValue;
+				this.SupportCallClosedTime = "2999-01-01";
 			}
 			if (this.SupportCallClosedTime != null)
 			{
-				this.SupportCallClosedTimeNotNull = (DateTime)this.SupportCallClosedTime;
+				this.SupportCallClosedTimeNotNull = DateTime.Parse(this.SupportCallClosedTime);
 			}
 		}
 		// Zorgt ervoor dat alle double waarden niet null referentie zijn maar gewoon 0.
@@ -313,21 +320,21 @@ namespace TrustTeamVersion4.Models.Domain
 
 			return result;
 		}
-		//These nullpointers are really getting to me
+		//I'm tired of these m*therf*cking nullpointers in my m*therf*cking code!
 		public void MakeDoublesActualDoubles()
 		{
 			if (this.HoursTillClosed.Equals("") | this.HoursTillClosed.Equals("NULL") | this.HoursTillClosed == null)
 				HoursTillClosedDouble = 0.00;
 			else
-				HoursTillClosedDouble = Double.Parse(HoursTillClosed);
+				HoursTillClosedDouble = (double)(HoursTillClosed);
 			if (this.HoursInStatusOpen.Equals("") | this.HoursInStatusOpen.Equals("NULL") | this.HoursInStatusOpen == null)
 				HoursInStatusOpenDouble = 0.00;
 			else
-				HoursInStatusOpenDouble = Double.Parse(HoursInStatusOpen);
+				HoursInStatusOpenDouble = (double)HoursInStatusOpen;
 			if (this.HoursInvoiceCenter.Equals("") | this.HoursInvoiceCenter.Equals("NULL") | this.HoursInvoiceCenter == null)
 				HoursInvoiceCenterDouble = 0.00;
 			else
-				HoursInvoiceCenterDouble = Double.Parse(HoursInvoiceCenter);
+				HoursInvoiceCenterDouble = (double)(HoursInvoiceCenter);
 		}
 		//making sure if a string is null it's converted into a string value "null"
 		public void RemoveNull()
@@ -339,10 +346,14 @@ namespace TrustTeamVersion4.Models.Domain
 			{
 				if (prop.GetValue(this) == null)
 				{
-					prop.SetValue(this, "NULL");
+					if(prop.PropertyType == typeof(String))
+						prop.SetValue(this, "NULL");
+					if (prop.PropertyType == typeof(Decimal?))
+						prop.SetValue(this,(Decimal)0.0);
 				}
 
 			}// moet erna want string mag geen null meer zijn
+			string hey = "stop";
 			this.MakeDoublesActualDoubles();
 		}
 		// Controleren of de bool LastMonth true is, zoja, dan worden de correcte properties ingesteld op de juiste data.
@@ -351,7 +362,7 @@ namespace TrustTeamVersion4.Models.Domain
 			int substractMonth = -(1);
 			if (this.LastMonth)
 			{
-				this.SupportCallOpenDate = DateTime.Now.AddMonths(substractMonth);
+				this.SupportCallOpenDate = DateTime.Now.AddMonths(substractMonth).ToString("yyyy-MM-dd");
 				this.SupportCallOpenDateEinde = DateTime.Now;
 			}
 		}
@@ -368,8 +379,8 @@ namespace TrustTeamVersion4.Models.Domain
 		{
 			this.SetDateNotNull();
 			Dictionary<string, string> cutDate = new Dictionary<string, string> { };
-			cutDate.Add("SupportCallOpenDate", this.SupportCallOpenDate.ToShortDateString());
-			cutDate.Add("SupportCallOpenTime", this.SupportCallOpenTime.ToShortTimeString());
+			cutDate.Add("SupportCallOpenDate", this.SupportCallOpenDate);
+			cutDate.Add("SupportCallOpenTime", this.SupportCallOpenTime);
 			cutDate.Add("SupportCallClosedDate", this.SupportCallClosedDateNotNull.ToShortDateString());
 			cutDate.Add("SupportCallClosedTime", this.SupportCallClosedTimeNotNull.ToShortTimeString());
 			return cutDate;

@@ -18,5 +18,10 @@ namespace TrustTeamVersion4.Data
             base.OnModelCreating(modelBuilder);
             modelBuilder.ApplyConfiguration(new HomeConfiguration());
         }
+
+		protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+		{
+			optionsBuilder.UseSqlServer(@"Data Source = trustsq02.trustteam.local; Initial Catalog = ClienteleITSM_PROD_Application; Persist Security Info = True; User ID = servicereporting; Password = 3WvBHq3AEhIwWMAuPi; MultipleActiveResultSets = True");
+		}
     }
 }

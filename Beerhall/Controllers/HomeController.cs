@@ -56,20 +56,14 @@ namespace TrustTeamVersion4.Controllers
 		#region Index
 		public IActionResult Index()
 		{
+			Home returnView;
 			//slaView op vals zetten zodanig de juiste data wordt getoond als er gesorteerd/verborgen wordt.
 			slaView = false;
-			// Het ophalen van de possibleChoices uit de session (voor als er werd teruggekeerd naar de index en het niet de eerst keer is)
-			_possibleChoices = (Dictionary<string, List<object>>)HttpContext.Session.GetObjectDict<Dictionary<string,List<object>>>("_possibleChoices");
-			//Als de index pagina voor de eerste maal geladen wordt zal dit uitvoeren
-			// hier worden alle mogelijke keuzes voor alle dropdowns gezocht en teruggegeven als Dictionary<string,List<object>>. Deze worden dan naar de
-			// session geschreven en in ViewData gestopt.
-			if (_possibleChoices == null | _possibleChoices.Count() == 0)
-			{
-				_possibleChoices = _homeRepository.getPossibleChoices();
-				HttpContext.Session.SetObject("_possibleChoices", _possibleChoices);
-			}
-			ViewData["Selections"] = _possibleChoices;
-			return View("Index");
+			// Dit dient voor het tonen van de correcte textfields als de user wil filteren op reeds gefilterde data.
+			returnView = HttpContext.Session.GetObjectSingle<Home>("filter");
+			if (returnView == null)
+				returnView = _home;
+			return View("Index", returnView);
 		}
 		#endregion
 		#region Table method
@@ -82,57 +76,100 @@ namespace TrustTeamVersion4.Controllers
 			_homesFiltered = (IEnumerable<Home>)HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
 			_viewModel = HttpContext.Session.GetObjectSingle<TableViewModel>("_viewModel");
 			// Het doorgeven van de gekozen filter als string aan de view via een ViewBag (zodat dit kan weergegeven worden)
-			ViewBag.filter = chosenFilter;
-			try{
-			// Als de filter niet null is uitvoeren, maw enkel de eerste maal dat data wordt geladen of indien er opnieuw naar de index werd gegaan
-			// om opnieuw te filteren.
-			// Dit zal dus nooit activeren als men gewoon wenst te sorteren met reeds eerdere gefilterde data
-			if (!(filter.IsEmptyObject()) | _homesFiltered == null)
+			//chosenFilter = filter.ToString();
+		//	ViewBag.filter = chosenFilter;
+			try
 			{
+				// Als de filter niet null is uitvoeren, maw enkel de eerste maal dat data wordt geladen of indien er opnieuw naar de index werd gegaan
+				// om opnieuw te filteren.
+				// Dit zal dus nooit activeren als men bv wenst te sorteren met reeds eerdere gefilterde data
+				if (!(filter.IsEmptyObject()) | _homesFiltered == null)
+				{
+					Home filterTemp = HttpContext.Session.GetObjectSingle<Home>("filter");
+					filterTemp = filterTemp == null ? new Home() : filterTemp;
+					if (filterTemp.FirstFilter)
+						filter.FirstFilter = true;
+					if (filter.FirstFilter == false)
+					{
+						filter.CheckAndSetLastMonth();
+						if (filter.InvoicCenterOrganization == null | (filter.SupportCallOpenDate == null && filter.LastMonth == false))
+						{
+							ViewData["Error"] = "Gelieve zowel een bedrijfsnaam als een start datum in te vullen bij uw eerste selectie.";
+							return View("Index", _home);
+						}
+						else if (DateTime.Parse(filter.SupportCallOpenDate) < DateTime.Today.AddYears(-1))
+						{
+							ViewData["Error"] = "Gelieve een datum te selecteren die minder dan een jaar geleden is.";
+							return View("Index", _home);
+						}
+						_homesFiltered = _homeRepository.InitialFilter(filter);
+						filter.FirstFilter = true;
+						//Bijhouden van de filter
+						HttpContext.Session.SetObject<Home>("filter", filter);
 
-				// Het filteren van de data adhv de meegeven filter.
-				//_homesFiltered = _homeRepository.Filter(filter);
-				List<List<string>> setProps = this.GetSetPropertiesAsString(filter);
-				_homesFiltered = _homeRepository.getFiltered(setProps[0].ToArray(),setProps[1]);
-				// Het opslaan van de filter zodanig dit kan weergegeven worden boven de data
-				chosenFilter = filter.ToString();
+						// Bijhouden van gefilterde Home objecten
+						HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
 
-				// Het doorgeven van de gekozen filter als string aan de view via een ViewBag (zodat dit kan weergegeven worden)
-				ViewBag.filter = chosenFilter;
+						_viewModel = new TableViewModel(_homesFiltered, filter);
+						if (_viewModel.Data.Count > 0)
+						{
+							HttpContext.Session.SetObject<TableViewModel>("_viewModel", _viewModel);
+							return View(_viewModel);
+						}
+						else
+						{
+							filter.FirstFilter = false;
+							HttpContext.Session.SetObject<Home>("filter", filter);
+						}
+					}
 
-				//Bijhouden van de filter
-				HttpContext.Session.SetObject<Home>("filter", filter);
+					// Het filteren van de data adhv de meegeven filter.
+					//_homesFiltered = _homeRepository.Filter(filter);
+					List<List<string>> setProps = this.GetSetPropertiesAsString(filter);
+					_homesFiltered = _homeRepository.getFiltered(setProps[0].ToArray(), setProps[1], _homesFiltered);
+					// Het opslaan van de filter zodanig dit kan weergegeven worden boven de data
+					//chosenFilter = filter.ToString();
 
-				// Bijhouden van gefilterde Home objecten
-				HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
-			}
-			// Controleren of er al een viewModel bestaat, indien dit niet zo is maken we een nieuw aan gebaseeerd op de gefilterde data.
-			if (_viewModel == null)
-			{
-				_viewModel = new TableViewModel(_homesFiltered, _filter);
-				HttpContext.Session.SetObject<TableViewModel>("_viewModel", _viewModel);
-			}
-			// Controleren of de data in het viewmodel gelijk is aan de net gefilterde data. Anders werden er soms verkeerde resultaten getoond. Dit bijvoorbeeld
-			// Als er verkeerde gegevens werden ingegeven, dan werd de table gewoon getoond met de gegevens van de vorige search ipv een foutmelding te geven
-			else if (!(_homesFiltered.SequenceEqual(_viewModel.Data)))
-			{
-				_viewModel = new TableViewModel(_homesFiltered, _filter);
-				HttpContext.Session.SetObject<TableViewModel>("_viewModel", _viewModel);
-			}
-			//Kijken of de search resultaten opgaf en een gepaste reactie geven indien dit niet het geval was.
-			if (CheckInput(filter))
-			{
-				_possibleChoices = (Dictionary<string, List<object>>)HttpContext.Session.GetObjectDict<Dictionary<string, List<object>>>("_possibleChoices");
+					// Het doorgeven van de gekozen filter als string aan de view via een ViewBag (zodat dit kan weergegeven worden)
+					//ViewBag.filter = chosenFilter;
+					if (_homesFiltered.Count() > 0)
+					{
+						
+						//Bijhouden van de filter
+						HttpContext.Session.SetObject<Home>("filter", filter);
 
-				ViewData["Selections"] = _possibleChoices;
-				return View("Index");
-			}
+						// Bijhouden van gefilterde Home objecten
+						HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
+					}
+				}
+				// Controleren of er al een viewModel bestaat, indien dit niet zo is maken we een nieuw aan gebaseeerd op de gefilterde data.
+				if (_viewModel == null)
+				{
+					_viewModel = new TableViewModel(_homesFiltered, _filter);
+					HttpContext.Session.SetObject<TableViewModel>("_viewModel", _viewModel);
+				}
+				// Controleren of de data in het viewmodel gelijk is aan de net gefilterde data. Anders werden er soms verkeerde resultaten getoond. Dit bijvoorbeeld
+				// Als er verkeerde gegevens werden ingegeven, dan werd de table gewoon getoond met de gegevens van de vorige search ipv een foutmelding te geven
+				else if (!(_homesFiltered.SequenceEqual(_viewModel.Data)))
+				{
+					_viewModel = new TableViewModel(_homesFiltered, filter);
+					HttpContext.Session.SetObject<TableViewModel>("_viewModel", _viewModel);
+				}
+				//Kijken of de search resultaten opgaf en een gepaste reactie geven indien dit niet het geval was.
+				if (CheckInput(filter))
+				{
+					_filter = HttpContext.Session.GetObjectSingle<Home>("filter");
+					if (_filter == null)
+					{
+						_filter = new Home();
+					}
+					return View("Index",_filter);
+				}
 			}
 			catch (Exception e)
 			{
-				ViewData["Selections"] = _possibleChoices;
-				ViewData["Error"] = "Er ging iets mis, mogelijks is uw sessie verlopen" + e.Message;
-				this.Index();
+				ViewData["Error"] = "Er werden geen resultaten gevonden voor deze filter." + e.Message;
+				RedirectToActionPermanent("Index");
 			}
 			if (_viewModel == null)
 				_viewModel = new TableViewModel(_EmptyEnumerable, _home);
@@ -146,17 +183,18 @@ namespace TrustTeamVersion4.Controllers
 		// De sorter parameter bevat de naam van een property (zie de view)
 		public PartialViewResult SortPartial(string sorter)
 		{
-			try{
-			// De _viewModel variabele vullen met de correct gegevens, indien iemand vanuit de SLA tabel komt moet deze data dus correct zijn
-			// Anders wordt bij sorteren verkeerde data teruggegeven
-			//Eenmaal de data is geladen wordt deze gesorteerd en dan weggeschreven naar de session. slaView is true eenmaal de CheckSlaInput de _slafilter teruggaf.
-			//Als de _viewModel werd teruggegeven blijft deze false en zo wordt dus steeds de juiste variabele opgeslaan.
-			_viewModel = this.CheckSlaInput();
-			_viewModel.Data = _viewModel.SortBy(_viewModel.Data, sorter).ToList<Home>();
-			if (slaView == true)
-				HttpContext.Session.SetObject<TableViewModel>("_slafilter", _viewModel);
-			else
-				HttpContext.Session.SetObject<TableViewModel>("_viewModel", _viewModel);
+			try
+			{
+				// De _viewModel variabele vullen met de correct gegevens, indien iemand vanuit de SLA tabel komt moet deze data dus correct zijn
+				// Anders wordt bij sorteren verkeerde data teruggegeven
+				//Eenmaal de data is geladen wordt deze gesorteerd en dan weggeschreven naar de session. slaView is true eenmaal de CheckSlaInput de _slafilter teruggaf.
+				//Als de _viewModel werd teruggegeven blijft deze false en zo wordt dus steeds de juiste variabele opgeslaan.
+				_viewModel = this.CheckSlaInput();
+				_viewModel.Data = _viewModel.SortBy(_viewModel.Data, sorter).ToList<Home>();
+				if (slaView == true)
+					HttpContext.Session.SetObject<TableViewModel>("_slafilter", _viewModel);
+				else
+					HttpContext.Session.SetObject<TableViewModel>("_viewModel", _viewModel);
 			}
 			// Indien de sessie verloopt wordt hier een exception gevangen en worden de correct variabelen gezet.
 			catch (Exception e)
@@ -166,8 +204,8 @@ namespace TrustTeamVersion4.Controllers
 				this.Index();
 			}
 			if (_viewModel == null)
-				_viewModel = new TableViewModel(_EmptyEnumerable,_home);
-			return PartialView("_TableView",_viewModel);
+				_viewModel = new TableViewModel(_EmptyEnumerable, _home);
+			return PartialView("_TableView", _viewModel);
 		}
 		#endregion
 		#region Closing columns
@@ -186,7 +224,7 @@ namespace TrustTeamVersion4.Controllers
 					HttpContext.Session.SetObject<TableViewModel>("_slafilter", _viewModel);
 				else
 					HttpContext.Session.SetObject<TableViewModel>("_viewModel", _viewModel);
-				
+
 			}
 			catch (Exception e)
 			{
@@ -206,19 +244,39 @@ namespace TrustTeamVersion4.Controllers
 			// Als er een filter is opgegeven dan voeren we de volgende stappen uit
 			if (!(filter.IsEmptyObject()))
 			{
-				#region toepassen filter en controle filter
-				// Het filteren van de data adhv de meegeven filter.
-				List<List<string>> setProps = this.GetSetPropertiesAsString(filter);
-				_homesFiltered = _homeRepository.getFiltered(setProps[0].ToArray(), setProps[1]);
-				// Het opslaan van de filter zodanig dit kan weergegeven worden boven de data. Dit moet na het filteren,
-				//dit omdat anders de data als "laatste maand" geselecteerd werd nog niet correct zijn.
-				chosenFilter = filter.ToString();
-				// Het doorgeven van de gekozen filter als string aan de view via een ViewBag (zodat dit kan weergegeven worden)
-				ViewBag.filter = chosenFilter;
-				//Bijhouden van de filter
-				HttpContext.Session.SetObject<Home>("filter", filter);
-				// Bijhouden van gefilterde Home objecten
-				HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
+
+				if (filter.FirstFilter == false)
+				{
+					if (filter.InvoicCenterOrganization == null | (filter.SupportCallOpenDate == null && filter.LastMonth == false))
+					{
+						ViewData["Error"] = "Gelieve zowel een bedrijfsnaam als een start datum in te vullen bij uw eerste selectie.";
+						return View("Index");
+					}
+					_homesFiltered = _homeRepository.InitialFilter(filter);
+					filter.FirstFilter = true;
+					//Bijhouden van de filter
+					HttpContext.Session.SetObject<Home>("filter", filter);
+
+					// Bijhouden van gefilterde Home objecten
+					HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
+					
+				}
+				else
+				{
+					#region toepassen filter en controle filter
+					// Het filteren van de data adhv de meegeven filter.
+					List<List<string>> setProps = this.GetSetPropertiesAsString(filter);
+					_homesFiltered = _homeRepository.getFiltered(setProps[0].ToArray(), setProps[1],_homesFiltered);
+					// Het opslaan van de filter zodanig dit kan weergegeven worden boven de data. Dit moet na het filteren,
+					//dit omdat anders de data als "laatste maand" geselecteerd werd nog niet correct zijn.
+					chosenFilter = filter.ToString();
+					// Het doorgeven van de gekozen filter als string aan de view via een ViewBag (zodat dit kan weergegeven worden)
+					ViewBag.filter = chosenFilter;
+					//Bijhouden van de filter
+					HttpContext.Session.SetObject<Home>("filter", filter);
+					// Bijhouden van gefilterde Home objecten
+					HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
+				}
 			}
 			// Als er geen filter is meegegeven dan kijken we of er eentje in de session zit
 			else
@@ -247,7 +305,7 @@ namespace TrustTeamVersion4.Controllers
 					ViewData["Error"] = "Er ging iets mis, mogelijks is uw sessie verlopen" + e.Message;
 					this.Index();
 				}
-			HttpContext.Session.SetObject<GraphsViewModel>("graphsViewModel",graphsView);
+			HttpContext.Session.SetObject<GraphsViewModel>("graphsViewModel", graphsView);
 			// doorgeven ViewModel aan de View
 			return View(graphsView);
 		}
@@ -255,14 +313,15 @@ namespace TrustTeamVersion4.Controllers
 		#region Reset method
 		// De reset functie zorgt niet alleen voor het resetten van de dropdowns maar ook voor het leeg maken van de Session. Als er niet gereset wordt,
 		// kan de gebruiker steeds terugkeren naar graphs en table en de vorige data terug zien (tot hij opnieuw een filter heeft geselecteerd uiteraard)
-		public IActionResult  Reset()
+		public IActionResult Reset()
 		{
 			//Ophalen van de mogelijke keuzes en leegmaken van de Session.
 			_possibleChoices = (Dictionary<string, List<object>>)HttpContext.Session.GetObjectDict<Dictionary<string, List<object>>>("_possibleChoices");
 			_homesFiltered = _EmptyEnumerable;
 			HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
+			HttpContext.Session.SetObject<Home>("filter", _home);
 			ViewData["Selections"] = _possibleChoices;
-			return View("Index");
+			return View("Index",_home);
 
 		}
 
@@ -271,7 +330,8 @@ namespace TrustTeamVersion4.Controllers
 		// De methode die er voor zorgt dat men specifieke tickets kan bekijken uit de tabel. Maar dat de origineel gefilterde data ook nog beschikbaar
 		// blijft. Na bijvoorbeeld de pagina te vernieuwen.
 		// De twee parameters bepalen welke SLA er geselecteerd werd.
-		public ActionResult SlaFilter(string imp, string urg) {
+		public ActionResult SlaFilter(string imp, string urg)
+		{
 			IEnumerable<Home> _SlaPriorities = Enumerable.Empty<Home>();
 			TableViewModel _tempModel;
 			Home _SlaFilter = new Home
@@ -284,28 +344,21 @@ namespace TrustTeamVersion4.Controllers
 				imp = "NULL";
 			if (urg == "Not Set")
 				urg = "NULL";
+			ViewBag.filter = _SlaFilter.ToString();
 			try
 			{
 				//Kijken of _homesfiltered null is, indien ja, dan uit sessie halen, is het nog steeds null, dan halen we alle objecten op
+
+				_homesFiltered = HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
 				if (CheckInputMany(_homesFiltered))
 				{
-					_homesFiltered = HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
-					if (CheckInputMany(_homesFiltered))
-					{
-						_homesFiltered = _homeRepository.GetAll();
-					}
-					// Verwijderen van alle mogelijke null referenties in de dataset
-					_homeRepository.RemoveNull(_homesFiltered);
-					//Het filteren van de opgehaalde data op basis van de impact en urgenties die we meekregen.
-					_SlaPriorities = _homesFiltered.Where(h => h.SupportCallImpact.Equals(imp) && h.SupportCallUrgency.Equals(urg));
+					_homesFiltered = _homeRepository.GetAll();
 				}
-				else
-				{
-					//idem hierboven
-					_homeRepository.RemoveNull(_homesFiltered);
-					_SlaPriorities = _homesFiltered.Where(h => h.SupportCallImpact.Equals(imp) && h.SupportCallUrgency.Equals(urg));
+				// Verwijderen van alle mogelijke null referenties in de dataset
+				_homeRepository.RemoveNull(_homesFiltered);
+				//Het filteren van de opgehaalde data op basis van de impact en urgenties die we meekregen.
+				_SlaPriorities = _homesFiltered.Where(h => h.SupportCallImpact.Equals(imp) && h.SupportCallUrgency.Equals(urg));
 
-				}
 				//Aanmaken van een TableViewModel voor weergave en opslaan in Session. De reden waarom staat hierboven uitgelegd bij sorteer en close methoden.
 				_tempModel = new TableViewModel(_SlaPriorities, _SlaFilter);
 				HttpContext.Session.SetObject<TableViewModel>("_slafilter", _tempModel);
@@ -342,8 +395,8 @@ namespace TrustTeamVersion4.Controllers
 			}
 		}
 		#endregion
-
 		#region methods
+		// Geeft de ingestelde properties van een object terug als string value. Dit in combinatie met de naam van de property ook als string
 		public List<List<string>> GetSetPropertiesAsString(Home home)
 		{
 			PropertyInfo[] _temp = home.GetProperties();
@@ -352,34 +405,37 @@ namespace TrustTeamVersion4.Controllers
 			foreach (var pr in _temp)
 			{
 				if (pr.GetValue(home) != null)
-				{
+				{// Als de property een gewone string is keert de string gewoon terug
 					if (pr.PropertyType == typeof(string) && !(pr.GetValue(home).Equals("")))
 					{
 						props.Add(pr.Name);
 						values.Add(pr.GetValue(home).ToString());
 					}
-
-					if (pr.PropertyType == typeof(double) | pr.PropertyType == typeof(double?) && !(pr.GetValue(home).Equals(0.0)))
+					//  Bij een double of double? wordt de waarde ook omgezet naar string
+					// aangezien sommige doubles null kunnen zijn en sommige nooit null zijn is een extra check vereist
+					if (pr.PropertyType == typeof(double) | pr.PropertyType == typeof(double?) | pr.PropertyType == typeof(int) | pr.PropertyType == typeof(decimal) && (!(pr.GetValue(home).Equals(0.0)) && !(pr.GetValue(home).Equals(0)) && !(pr.GetValue(home).Equals(Decimal.Zero))))
 					{
 						props.Add(pr.Name);
 						values.Add(pr.GetValue(home).ToString());
 					}
-
+					// De Underlyingsystemtype omdat er anders errors worden getoond als hier een nullable wordt vergeleken met bool.
+					// De enigste bool is LastMonth en als deze op waar staat worden dus de nodige aanpassingen doorgevoerd
 					if (pr.PropertyType.UnderlyingSystemType == typeof(bool) && !(pr.GetValue(home).Equals(false)))
 					{
 						home.CheckAndSetLastMonth();
 					}
-
+					// Als we bij de dates zijn moeten deze correct worden weergegeven waarvoor dit proces. De dates mogen echter niet
+					// gelijk zijn aan de max of min values van DateTime
 					if (pr.PropertyType == typeof(DateTime) | pr.PropertyType == typeof(DateTime?) && !(pr.GetValue(home).Equals(DateTime.MaxValue)) && !(pr.GetValue(home).Equals(DateTime.MinValue)))
 					{
 						props.Add(pr.Name);
 						string temp = pr.GetValue(home).ToString();
-						DateTime tempD = DateTime.Parse(temp);						
+						DateTime tempD = DateTime.Parse(temp);
 						values.Add(tempD.ToString("yyyy-MM-dd HH:mm:ss"));
 					}
 				}
 			}
-			return new List<List<string>>() { props,values};
+			return new List<List<string>>() { props, values };
 		}
 		// Kijken of er resultaten werden gevonden op basis van de filter
 		public bool CheckInput(Home home)
@@ -390,14 +446,15 @@ namespace TrustTeamVersion4.Controllers
 				ViewData["Error"] = ErrorMessage;
 				return true;
 			}
-			else {
+			else
+			{
 				return false;
 			}
 		}
 		// Kijken of de meegegeven IEnumerable instanties bevat of niet
 		public bool CheckInputMany(IEnumerable<Home> homes)
 		{
-			if (homes.Count() == 0 )
+			if (homes.Count() == 0)
 			{
 				string ErrorMessage = "Deze zoekopdracht leverde geen resultaten op of u gaf geen gegevens in om op te filteren.";
 				ViewData["Error"] = ErrorMessage;
@@ -415,11 +472,11 @@ namespace TrustTeamVersion4.Controllers
 			int counter2 = 0;
 			string pre = "";
 			string[] value = new string[amount];
-			string[] alphabet = new[] { "A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"};
+			string[] alphabet = new[] { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
 			for (int i = 0; i <= amount; i++)
 			{
-				value.Append(pre + alphabet[i-counter2]);
-				if (i == alphabet.Count()-1)
+				value.Append(pre + alphabet[i - counter2]);
+				if (i == alphabet.Count() - 1)
 				{
 					pre = alphabet[counter];
 					counter++;
@@ -430,7 +487,8 @@ namespace TrustTeamVersion4.Controllers
 		}
 		// controleren of er een SLA wordt bekenen (of het in de sessie zit), Indien dit het geval is zullen we deze weergeven en slaView op true zetten
 		// Is deze echter null, dan wil dat zeggen dat alle gefilterde data moet weergegeven worden en wordt dus de standaard _viewModel weergegeven.
-		private TableViewModel CheckSlaInput() {
+		private TableViewModel CheckSlaInput()
+		{
 			TableViewModel _temp = HttpContext.Session.GetObjectSingle<TableViewModel>("_slafilter");
 			if (_temp != null)
 			{

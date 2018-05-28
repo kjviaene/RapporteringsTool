@@ -14,7 +14,6 @@ namespace TrustTeamVersion4.Data.Mapping
 			builder.ToTable<Home>("Home");
 			// Mappen Primary key
 			builder.HasKey(t => new { t.Month, t.Number });
-
 			
 		}
 

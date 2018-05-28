@@ -19,6 +19,7 @@ namespace TrustTeamVersion4.Data.Repositories
 		#region Properties/variables
 		private readonly ApplicationDbContext _dbContext;
 		private readonly DbSet<Home> _homes2;
+		private List<Home> _homesDB;
 		public IEnumerable<Home> HomesFiltered;
 		public IEnumerable<Home> _homes;
 		public Dictionary<string, List<object>> IndexSelects;
@@ -27,20 +28,31 @@ namespace TrustTeamVersion4.Data.Repositories
 		#region Constructor
 		public HomeRepository(ApplicationDbContext dbContext)
 		{
-			_dbContext = dbContext;
-			_homes2 = dbContext.homes;
-			//_homes = _homes2.Where(x => x.InvoicCenterOrganization.Equals("SHOPINVEST")).ToList();
-			_homes = new List<Home>() { new Home() };
-			//foreach (var home in _homes)
-			//{
-			//	home.SetDateNotNull();
-			//}
+			_dbContext = dbContext;//_homes2 = dbContext.homes;
+			//_homes = new List<Home>() { new Home() };
 		}
 
 		#endregion
+		#region Initiele filter
+		public IEnumerable<Home> InitialFilter(Home home)
+		{
+			home.CheckAndSetLastMonth();
+			if (home.InvoicCenterOrganization.Equals("") | home.SupportCallOpenDate == null)
+				throw new Exception("Ongeldige invoer");
+			var bedrijf = home.InvoicCenterOrganization;
+			string begin = home.SupportCallOpenDate;
+			string eind = home.SupportCallOpenDateEinde.ToString("yyyy-MM-dd");
+			if (eind == "0001-01-01")
+				eind = "2999-01-01";
+			IEnumerable<Home> result;
+			result = _dbContext.homes.FromSql($"EXECUTE dbo.sp_opvragenRapportering {bedrijf},{begin},{eind}").ToList();
+			return result;
+
+		}
+		#endregion
 		#region DB filter
 		// Vervanging van oude filter methode, deze haalt data steeds rechstreeks uit database mbv linq queries.
-		public IEnumerable<Home> getFiltered(string[] property, List<string> filter)
+		public IEnumerable<Home> getFiltered(string[] property, List<string> filter,IEnumerable<Home> initial)
 		{
 			// Bij de eerste iteratie wordt de eerste initiele hoop data opgehaald, daarna wordt op deze reeds opgevraagde data verder gefilterd.
 			// Het is eenvoudiger om over elke property te filteren dan ze allemaal te controleren in 1 linq query omdat we anders met null kwesties zitten
@@ -53,83 +65,147 @@ namespace TrustTeamVersion4.Data.Repositories
 			bool dateDone = false;
 			int index = 0;
 			int temp = 0;
+			bool dateDoneThisLoop = false;
 			foreach (var str in property)
 			{
 				prop.Add(_home.getProperty(str));
 			}
+			// Deze check is er om ervoor te zorgen dat er niet twee maal geïtereerd wordt voor zowel start als eind datum
+			// De index is er zodanig we later de correct waarde kunnen verwijderen (line 106)
 			if (prop.Contains(_home.getProperty("SupportCallOpenDate")) && prop.Contains(_home.getProperty("SupportCallOpenDateEinde")))
 			{
 				temp = prop.IndexOf(_home.getProperty("SupportCallOpenDateEinde"));
 				prop.Remove(_home.getProperty("SupportCallOpenDateEinde"));
 			}
+			// overlopen elke property die een waarde heeft
 			foreach (var pr in prop)
-			{
+			{// Als het de eerste filter is dan moeten we de data nog uit de databank halen. (_homes2)
 				if (first)
-				{
-					foreach (var item in _homes2)
-					{
+				{// itereren over databank
+					foreach (var item in initial)
+					{// als de filter geen datum is is de controle eenvoudig
 						if (!(pr.Name.Contains("Date")))
-						{
-							if (pr.GetValue(item) != null && pr.GetValue(item).ToString().ToLower().Equals(filter[index].ToLower()))
+						{// Enkel de bedrijfsnaam mag maar deels overeen komen om te matchen, de overige moeten volledig identiek zijn
+							if ((pr.Name.Equals("InvoicCenterOrganization")))
 							{
-								result.Add(item);
-							}
-						}
-						else
-						{
-							if (!(dateDone))
-							{
-								DateTime start = DateTime.Parse(filter[index]);
-								DateTime end;
-								if (filter.Count-1 > index)
+								if (pr.GetValue(item) != null && pr.GetValue(item).ToString().ToLower().Contains(filter[index].ToLower()))
 								{
-									if(filter[index + 1].Contains("00:00:00"))
-										end = DateTime.Parse(filter[index + 1]);
-									else									
-										end = DateTime.MaxValue;
-									
+									result.Add(item);
 								}
-								else							
-									end = DateTime.MaxValue;
-								
-								DateTime nullableDate = item.SupportCallOpenDate;
-								if (pr.GetValue(item) != null && DateTime.Compare(item.SupportCallOpenDate, start) >= 0 && DateTime.Compare(nullableDate, end) <= 0)
+							}
+							else
+							{
+								if (pr.GetValue(item) != null && pr.GetValue(item).ToString().ToLower().Equals(filter[index].ToLower()))
 								{
 									result.Add(item);
 								}
 							}
 						}
+						//Als de filter wel een datum is
+						else
+						{// Als er nog niet gefilterd werd op datum in deze iteratie. Anders zijn de gegevens al verwijderd (zie line 106)
+							if (!(dateDone))
+							{// Instellen start date op de meegegeven filter. Een start date is sowieso aanwezig, een end date echter niet
+								DateTime start = DateTime.Parse(filter[index]);
+								DateTime end;
+								dateDoneThisLoop = true;
+								// Als de filter geen element meer telt na de start datum of ->
+								if (filter.Count - 1 > index)
+								{ // -> de filter is geen datum, dan wordt dit niet uitgevoerd maar wel dit ->
+									if (filter[index + 1].Contains("00:00:00"))
+										end = DateTime.Parse(filter[index + 1]);
+									else
+										// -> het toewijzen van de max value zodanig alle data kleiner zijn dan dit
+										end = DateTime.MaxValue;
+
+								}
+								else
+									end = DateTime.MaxValue;
+
+								DateTime date = DateTime.Parse(item.SupportCallOpenDate);
+								DateTime dateEinde = (DateTime.Parse(item.SupportCallClosedDate) == null) ? DateTime.MaxValue : DateTime.Parse(item.SupportCallClosedDate);
+								// Controleren of de datum niet null is / groter is dan start / kleiner is dan eind
+								if (pr.GetValue(item) != null && DateTime.Compare(date, start) >= 0 && DateTime.Compare(date, end) <= 0)
+								{
+									result.Add(item);
+								}
+								else if (dateEinde >= start && dateEinde <= end)
+								{
+									resultTemp.Add(item);
+								}
+							}
+						}
 					}
-					if (temp != 0)
-						filter.RemoveAt(temp);
-					dateDone = true;
+					// Verwijderen van de datum gegevens in de filter zodanig het verhogen van de index met 1 nog klopt en bools aanpassen
+					if (dateDoneThisLoop)
+					{
+						dateDone = true;
+						if (temp != 0)
+							filter.RemoveAt(temp);
+					}
 					first = false;
 					index++;
 				}
 				else
-				{
+				{// idem hierboven
 					foreach (var obj in result)
 					{
 						if (!(pr.Name.Contains("Date")))
 						{
-							if (pr.GetValue(obj) != null && pr.GetValue(obj).ToString().ToLower().Equals(filter[index].ToLower()))
+							if ((pr.Name.Equals("InvoicCenterOrganization")))
 							{
-								resultTemp.Add(obj);
+								if (pr.GetValue(obj) != null && pr.GetValue(obj).ToString().ToLower().Contains(filter[index].ToLower()))
+								{
+									resultTemp.Add(obj);
+								}
+							}
+							else
+							{
+								if (pr.GetValue(obj) != null && pr.GetValue(obj).ToString().ToLower().Equals(filter[index].ToLower()))
+								{
+									resultTemp.Add(obj);
+								}
 							}
 						}
 						else
 						{
 							if (!(dateDone))
-							{
+							{// Instellen start date op de meegegeven filter. Een start date is sowieso aanwezig, een end date echter niet
 								DateTime start = DateTime.Parse(filter[index]);
-								DateTime end = DateTime.Parse(filter[index + 1]);
-								if (pr.GetValue(obj) != null && obj.SupportCallOpenDate >= start && obj.SupportCallOpenDate <= end)
+								DateTime end;
+								dateDoneThisLoop = true;
+								// Als de filter geen element meer telt na de start datum of ->
+								if (filter.Count - 1 > index)
+								{ // -> de filter is geen datum, dan wordt dit niet uitgevoerd maar wel dit ->
+									if (filter[index + 1].Contains("00:00:00"))
+										end = DateTime.Parse(filter[index + 1]);
+									else
+										// -> het toewijzen van de max value zodanig alle data kleiner zijn dan dit
+										end = DateTime.MaxValue;
+
+								}
+								else
+									end = DateTime.MaxValue;
+
+								DateTime dateBegin = DateTime.Parse(obj.SupportCallOpenDate);
+								DateTime dateEinde = (obj.SupportCallClosedDate == null) ? DateTime.MaxValue : DateTime.Parse(obj.SupportCallClosedDate);
+								// Controleren of de datum niet null is / groter is dan start / kleiner is dan eind
+								if (pr.GetValue(obj) != null && DateTime.Compare(dateBegin, start) >= 0 && DateTime.Compare(dateBegin, end) <= 0)
 								{
 									resultTemp.Add(obj);
 								}
-								dateDone = true;
+								else if ( dateEinde >= start && dateEinde <= end )
+								{
+									resultTemp.Add(obj);
+								}
 							}
 						}
+					}
+					if (dateDoneThisLoop)
+					{
+						dateDone = true;
+						if (temp != 0)
+							filter.RemoveAt(temp);
 					}
 					result = resultTemp;
 					resultTemp = new List<Home>();
@@ -140,64 +216,31 @@ namespace TrustTeamVersion4.Data.Repositories
 			return result;
 		}
 		#endregion
-		#region Get method for Index
-		// Deze methode verzameld alle info voor index met maar 1 iteratie door de homes. Vroeger verliep dit met een iteratie door alle homes per property
-		// Dit is dus een stuk sneller (# homes * # Properties)
-		public Dictionary<string, List<object>> getPossibleChoices()
-		{
-			// object moet gebruikt worden als type in de lijst omdat er verschillende types bestaan (int,string,DateTime,bool,...)
-			IndexSelects = new Dictionary<string, List<object>>();
-			// De properties die we wensen weer te geven.
-			List<string> wantedProperties = new List<string> { "Year", "OrganizationNumber", "InvoicCenterOrganization", "GroupName", "PersonName", "SupportCallType", "SupportCallPriority", "SupportCallImpact", "SupportCallUrgency", "SupportCallStatus", "OpenedByUser", "AssignedToUser", "AssignedToQueue", "InvoiceStatus" };
-			// Het selecteren van de gewenste properties adhv een LINQ query.
-			PropertyInfo[] properties = (PropertyInfo[])_home.GetProperties().Where(p => wantedProperties.Contains(p.Name)).ToArray();
-			// Het initialiseren van een nieuwe lijst voor elke geselecteerde property (anders krijgen we nullpointers)
-			foreach (var lijst in wantedProperties)
-			{
-				IndexSelects.Add(lijst, new List<object>());
-			}
-			// Het overlopen van elke home en elke property per elke home voor het toevoegen van alle unieke mogelijkheden.
-			foreach (Home h in _homes)
-			{
-				foreach (var prop in properties)
-				{
-					if (!(prop.GetValue(h) == null | IndexSelects[prop.Name].Contains(prop.GetValue(h))))
-					{
-						IndexSelects[prop.Name].Add(prop.GetValue(h));
-						IndexSelects[prop.Name].Sort();
-					}
-
-				}
-
-			}
-
-			return IndexSelects;
-		}
-		#endregion
+		
 		#region Get methodes voor de verschillen kolommen
 		// Return alle unieke nummers die in de databank zitten
-		public List<double?> GetNumbers()
+		public List<int> GetNumbers()
 		{
-			List<double?> numbers = new List<double?>();
+			List<int> numbers = new List<int>();
 			foreach (Home h in _homes)
 			{
 				if (!(h.Number == null | numbers.Exists(b => b == h.Number)))
 				{
-					numbers.Add(h.Number.Value);
+					numbers.Add(h.Number);
 				}
 			}
 			numbers.Sort();
 			return numbers;
 		}
 		// Return alle unieke jaartallen die in de databank zitten
-		public List<double?> GetYear()
+		public List<int> GetYear()
 		{
-			List<double?> years = new List<double?>();
+			List<int> years = new List<int>();
 			foreach (Home h in _homes)
 			{
 				if (!(h.Year == null | years.Exists(b => b == h.Year)))
 				{
-					years.Add(h.Year.Value);
+					years.Add(h.Year);
 				}
 			}
 			years.Sort();
@@ -435,12 +478,12 @@ namespace TrustTeamVersion4.Data.Repositories
 					}
 					// De controle voor de data zijn apart omdat we hier kijken voor <= en >= en dit is niet mogelijk als we algemeen elke property overlopen
 					// Als de datum niet de minimum waarde heeft (standaard ingesteld) en tussen de ingestelde waarden ligt dan zal de counter ook verhogen
-					if (!(home.SupportCallOpenDate == DateTime.MinValue) | !(home.SupportCallOpenDateEinde == DateTime.MinValue))
+					if (!(DateTime.Parse(home.SupportCallOpenDate) == DateTime.MinValue) | !(home.SupportCallOpenDateEinde == DateTime.MinValue))
 					{
 
-						if (home.SupportCallOpenDate <= h.SupportCallOpenDate)
+						if (DateTime.Parse(home.SupportCallOpenDate) <= DateTime.Parse(h.SupportCallOpenDate))
 							counter++;
-						if (home.SupportCallOpenDateEinde >= h.SupportCallOpenDate)
+						if (home.SupportCallOpenDateEinde >= DateTime.Parse(h.SupportCallOpenDate))
 							counter++;
 						if (home.LastMonth == true)
 							counter++;
