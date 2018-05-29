@@ -44,6 +44,8 @@ namespace TrustteamVersion4.Models.ViewModels
 		private List<string> _RemoveNullUrg;
 		[JsonProperty]
 		public bool PdfFormat { get; set; }
+		[JsonProperty]
+		public string filterAsString { get; set; }
 		#endregion
 		#region constructor
 		public GraphsViewModel()
@@ -55,6 +57,7 @@ namespace TrustteamVersion4.Models.ViewModels
 		{
 			#region Injectie
 			this._filter = filter;
+			filterAsString = filter.ToString() == null ? "" : filter.ToString();
 			#endregion
 			//Deze async werd toegevoegd om te proberen van de pdf beter te laten werken maar ondertussen werd al ondekt dat de oorzaak hiervan niet in 
 			// de code ligt. Wel aan .net core 2.0

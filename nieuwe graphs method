@@ -1,0 +1,108 @@
+
+		#region Graphs method
+		// Wordt geladen als er gekozen is op wat men wil filteren plus ook als er gesorteerd wil worden eenmaal de tabel geladen is, de string sortOrder is optioneel
+		// Indien er niets gekozen werd wordt de lijst gewoon ongesorteerd weergegeven
+		public IActionResult Graphs(Home filter)
+		{
+
+			_homesFiltered = (IEnumerable<Home>)HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
+			graphsView = HttpContext.Session.GetObjectSingle<GraphsViewModel>("graphsView");
+
+			try
+			{
+				// Als de filter niet null is uitvoeren, maw enkel de eerste maal dat data wordt geladen of indien er opnieuw naar de index werd gegaan
+				// om opnieuw te filteren.
+				// Dit zal dus nooit activeren als men bv wenst te sorteren met reeds eerdere gefilterde data
+				if (!(filter.IsEmptyObject()) | _homesFiltered == null)
+				{
+					Home filterTemp = HttpContext.Session.GetObjectSingle<Home>("filter");
+					filterTemp = filterTemp == null ? new Home() : filterTemp;
+					if (filterTemp.FirstFilter)
+						filter.FirstFilter = true;
+					if (filter.FirstFilter == false)
+					{
+						filter.CheckAndSetLastMonth();
+						if (filter.InvoicCenterOrganization == null | (filter.SupportCallOpenDate == null && filter.LastMonth == false))
+						{
+							ViewData["Error"] = "Gelieve zowel een bedrijfsnaam als een start datum in te vullen bij uw eerste selectie.";
+							return View("Index", _home);
+						}
+						else if (DateTime.Parse(filter.SupportCallOpenDate) < DateTime.Today.AddYears(-1))
+						{
+							ViewData["Error"] = "Gelieve een datum te selecteren die minder dan een jaar geleden is.";
+							return View("Index", _home);
+						}
+						_homesFiltered = _homeRepository.InitialFilter(filter);
+						filter.FirstFilter = true;
+						//Bijhouden van de filter
+						HttpContext.Session.SetObject<Home>("filter", filter);
+
+						// Bijhouden van gefilterde Home objecten
+						HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
+
+						graphsView = new GraphsViewModel(_homesRepository,_homesFiltered, filter);
+						if (graphsView.Data.Count > 0)
+						{
+							HttpContext.Session.SetObject<GraphsViewModel>("graphsView", graphsView);
+							return View(graphsView);
+						}
+						else
+						{
+							filter.FirstFilter = false;
+							HttpContext.Session.SetObject<Home>("filter", filter);
+						}
+					}
+
+					// Het filteren van de data adhv de meegeven filter.
+					//_homesFiltered = _homeRepository.Filter(filter);
+					List<List<string>> setProps = this.GetSetPropertiesAsString(filter);
+					_homesFiltered = _homeRepository.getFiltered(setProps[0].ToArray(), setProps[1], _homesFiltered);
+					// Het opslaan van de filter zodanig dit kan weergegeven worden boven de data
+					//chosenFilter = filter.ToString();
+
+					// Het doorgeven van de gekozen filter als string aan de view via een ViewBag (zodat dit kan weergegeven worden)
+					//ViewBag.filter = chosenFilter;
+					if (_homesFiltered.Count() > 0)
+					{
+
+						//Bijhouden van de filter
+						HttpContext.Session.SetObject<Home>("filter", filter);
+
+						// Bijhouden van gefilterde Home objecten
+						HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
+					}
+				}
+				// Controleren of er al een viewModel bestaat, indien dit niet zo is maken we een nieuw aan gebaseeerd op de gefilterde data.
+				if (graphsView == null)
+				{
+					graphsView = new GraphsViewModel(_homesFiltered, _filter);
+					HttpContext.Session.SetObject<GraphsViewModel>("graphsView", graphsView);
+				}
+				// Controleren of de data in het viewmodel gelijk is aan de net gefilterde data. Anders werden er soms verkeerde resultaten getoond. Dit bijvoorbeeld
+				// Als er verkeerde gegevens werden ingegeven, dan werd de table gewoon getoond met de gegevens van de vorige search ipv een foutmelding te geven
+				else if (!(_homesFiltered.SequenceEqual(graphsView.Data)))
+				{
+					graphsView = new GraphsViewModel(_homesRepository,_homesFiltered, filter);
+					HttpContext.Session.SetObject<GraphsViewModel>("graphsView", graphsView);
+				}
+				//Kijken of de search resultaten opgaf en een gepaste reactie geven indien dit niet het geval was.
+				if (CheckInput(filter))
+				{
+					_filter = HttpContext.Session.GetObjectSingle<Home>("filter");
+					if (_filter == null)
+					{
+						_filter = new Home();
+					}
+					return View("Index",_filter);
+				}
+			}
+			catch (Exception e)
+			{
+				ViewData["Error"] = "Er werden geen resultaten gevonden voor deze filter." + e.Message;
+				RedirectToActionPermanent("Index");
+			}
+			if (graphsView == null)
+				graphsView = new GraphsViewModel(_homesRepository,_EmptyEnumerable, _home);
+			return View(graphsView);
+		}
+		#endregion

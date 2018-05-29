@@ -224,7 +224,7 @@ namespace TrustTeamVersion4.Models.Domain
 			}
 			else
 			{
-				result = "/";
+				result = "";
 			}
 			return result;
 		}

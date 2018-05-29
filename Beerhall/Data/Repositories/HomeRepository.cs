@@ -95,7 +95,7 @@ namespace TrustTeamVersion4.Data.Repositories
 							}
 							else
 							{
-								if (pr.GetValue(item) != null && pr.GetValue(item).ToString().ToLower().Equals(filter[index].ToLower()))
+								if (pr.GetValue(item) != null && pr.GetValue(item).ToString().ToLower().Trim().Equals(filter[index].ToLower().Trim()))
 								{
 									result.Add(item);
 								}

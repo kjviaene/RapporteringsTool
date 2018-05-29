@@ -65,18 +65,18 @@
 	</div>
 	<div style="margin: 5px; margin-bottom: 15px;">
 		<label>Datum open begin</label>
-		@Html.TextBox("SupportCallOpenDate", null, new { @class = "datefield", type = "date", @id = "date1", onchange = "toggleDate(true)" })
+		@Html.TextBox("SupportCallOpenDate", null, new { @class = "datefield", type = "date", @id = "date1", @placeholder = "dd - mm - jjjj",value = "", onchange = "toggleDate(true)" })
 		<label>Datum open eind</label>
-		@Html.TextBox("SupportCallOpenDateEinde", null, new { @class = "datefield", type = "date", @id = "date2", disabled = "" })
+		@Html.TextBox("SupportCallOpenDateEinde", null, new { @class = "datefield", type = "date", @id = "date2", @placeholder = "dd - mm - jjjj", value = "", disabled = "" })
 	</div>
-	<b style="margin-top: 10px;">Voorbije maand: </b>@Html.CheckBoxFor(m => m.LastMonth, new { onchange = "toggleDisabled(this.checked)" })
+	<b style="margin-top: 10px;">Voorbije maand: </b>@Html.CheckBoxFor(m => m.LastMonth, new { onchange = "toggleDisabled(this.checked)", @id = "checkboxOne"})
 
 	<br />
 	<button class="btn btn-primary" type="submit" asp-action="Table" style="margin: 5px;">Filter</button>
 	<button asp-action="Graphs" class="btn btn-primary" type="submit" style="margin: 5px;">Graphs & Information</button>
 	<a asp-action="Reset" class="btn btn-default" style="margin: 5px;">Reset</a>
 </form>
-<div class="tooltip" style="height: 100%;"><img src="~/images/question.png" style="height: 35px; width: 35px;" />
+<div class="tooltip" style="height: 100%;"><img src="~/images/question.png" style="height: 35px; width: 35px;" onload="uncheckCheckbox();"/>
 	<span  class="tooltiptext">
 		Gelieve initieel een bedrijf en periode (enkel startdatum voldoet) te selecteren. Als u dan terugkeert naar deze pagina zult u de mogelijkheid hebben om
 		op de overige eigenschappen te filteren. Reset staat u toe om een nieuw bedrijf / nieuwe periode te kiezen.
@@ -84,13 +84,26 @@
 </div>
 <script>
 	function toggleDisabled(_checked) {
+		document.getElementById('date1').value = '';
 		document.getElementById('date1').disabled = _checked ? true : false;
+		if (document.getElementById('date2').disabled == false) {
+			document.getElementById('date2').value = '';
+			document.getElementById('date2').disabled = _checked ? true : false;
+		}
 	}
 	function toggleDate(_changed) {
-		document.getElementById('date2').disabled = _changed ? false : true;
+		if (document.getElementById('date1').value != 'dd - mm - jjjj') {
+			document.getElementById('date2').value = '';
+			document.getElementById('date2').disabled = _changed ? false : true;
+		}
 		
 	}
-
+	function uncheckCheckbox()
+	{
+		document.getElementById('checkboxOne').checked = false;
+		document.getElementById('date2').value = '';
+		document.getElementById('date1').value = '';
+	 }
 </script>
 <script type="text/javascript">
 	function toggleInitial() {

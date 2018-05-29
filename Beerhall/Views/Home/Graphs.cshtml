@@ -221,7 +221,7 @@
 	@if (Model.PdfFormat == false)
 	{
 		<h2>Gefilterd op : </h2>
-		<h3>@ViewBag.filter</h3>
+		<h3>@Model.filterAsString</h3>
 		<h4>@ViewData["Error"]</h4>
 		<div class="btn btn-default">
 			<a href="@Url.Action("PrintPdf", "Home")" target="_blank"><img src="~/images/pdf.png" width="40" /></a>

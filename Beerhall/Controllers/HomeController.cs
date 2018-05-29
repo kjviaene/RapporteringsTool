@@ -31,7 +31,7 @@ namespace TrustTeamVersion4.Controllers
 {
 	public class HomeController : Controller
 	{
-		#region Properties
+		#region Properties/variables
 		private readonly IHomeRepository _homeRepository;
 		private IHostingEnvironment _hostingEnvironment;
 		private static String chosenFilter;
@@ -40,6 +40,7 @@ namespace TrustTeamVersion4.Controllers
 		Home _home = new Home();
 		Home _filter = new Home();
 		TableViewModel _viewModel;
+		GraphsViewModel graphsView;
 		[JsonProperty]
 		IEnumerable<Home> _homesFiltered = Enumerable.Empty<Home>();
 		IEnumerable<Home> _homesSorted = Enumerable.Empty<Home>();
@@ -71,13 +72,10 @@ namespace TrustTeamVersion4.Controllers
 		// Indien er niets gekozen werd wordt de lijst gewoon ongesorteerd weergegeven
 		public IActionResult Table(Home filter, string sortOrder)
 		{
-
+			string tempString = "";
 			slaView = false;
 			_homesFiltered = (IEnumerable<Home>)HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
 			_viewModel = HttpContext.Session.GetObjectSingle<TableViewModel>("_viewModel");
-			// Het doorgeven van de gekozen filter als string aan de view via een ViewBag (zodat dit kan weergegeven worden)
-			//chosenFilter = filter.ToString();
-		//	ViewBag.filter = chosenFilter;
 			try
 			{
 				// Als de filter niet null is uitvoeren, maw enkel de eerste maal dat data wordt geladen of indien er opnieuw naar de index werd gegaan
@@ -113,6 +111,7 @@ namespace TrustTeamVersion4.Controllers
 						_viewModel = new TableViewModel(_homesFiltered, filter);
 						if (_viewModel.Data.Count > 0)
 						{
+							_viewModel.FilterString = GetCorrectFilterString(_viewModel, graphsView, filter.ToString());
 							HttpContext.Session.SetObject<TableViewModel>("_viewModel", _viewModel);
 							return View(_viewModel);
 						}
@@ -134,7 +133,7 @@ namespace TrustTeamVersion4.Controllers
 					//ViewBag.filter = chosenFilter;
 					if (_homesFiltered.Count() > 0)
 					{
-						
+
 						//Bijhouden van de filter
 						HttpContext.Session.SetObject<Home>("filter", filter);
 
@@ -163,7 +162,7 @@ namespace TrustTeamVersion4.Controllers
 					{
 						_filter = new Home();
 					}
-					return View("Index",_filter);
+					return View("Index", _filter);
 				}
 			}
 			catch (Exception e)
@@ -173,6 +172,22 @@ namespace TrustTeamVersion4.Controllers
 			}
 			if (_viewModel == null)
 				_viewModel = new TableViewModel(_EmptyEnumerable, _home);
+
+			graphsView = HttpContext.Session.GetObjectSingle<GraphsViewModel>("graphsView");
+			if (filter == null && _home == null)
+			{
+				tempString = "";
+			}
+			else if (filter == null && _home != null)
+			{
+				tempString = _home.ToString();
+			}
+			else
+			{
+				tempString = filter.ToString();
+			}
+			_viewModel.FilterString = GetCorrectFilterString(_viewModel, graphsView, tempString);
+			HttpContext.Session.SetObject<TableViewModel>("_viewModel", _viewModel);
 			return View(_viewModel);
 		}
 		#endregion
@@ -238,75 +253,123 @@ namespace TrustTeamVersion4.Controllers
 		}
 		#endregion
 		#region Graphs method
-		public IActionResult Graphs(Home filter, GraphsViewModel model)
+		// Wordt geladen als er gekozen is op wat men wil filteren plus ook als er gesorteerd wil worden eenmaal de tabel geladen is, de string sortOrder is optioneel
+		// Indien er niets gekozen werd wordt de lijst gewoon ongesorteerd weergegeven
+		public IActionResult Graphs(Home filter)
 		{
-			GraphsViewModel graphsView = model;
-			// Als er een filter is opgegeven dan voeren we de volgende stappen uit
-			if (!(filter.IsEmptyObject()))
+
+			_homesFiltered = (IEnumerable<Home>)HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
+			graphsView = HttpContext.Session.GetObjectSingle<GraphsViewModel>("graphsView");
+			_viewModel = HttpContext.Session.GetObjectSingle<TableViewModel>("_viewModel");
+			string tempString = "";
+
+			//if (_viewModel != null & graphsView != null)
+			//	graphsView.filterAsString = _viewModel.FilterString;
+			try
 			{
-
-				if (filter.FirstFilter == false)
+				// Als de filter niet null is uitvoeren, maw enkel de eerste maal dat data wordt geladen of indien er opnieuw naar de index werd gegaan
+				// om opnieuw te filteren.
+				// Dit zal dus nooit activeren als men bv wenst te sorteren met reeds eerdere gefilterde data
+				if (!(filter.IsEmptyObject()) | _homesFiltered == null)
 				{
-					if (filter.InvoicCenterOrganization == null | (filter.SupportCallOpenDate == null && filter.LastMonth == false))
+					Home filterTemp = HttpContext.Session.GetObjectSingle<Home>("filter");
+					filterTemp = filterTemp == null ? new Home() : filterTemp;
+					if (filterTemp.FirstFilter)
+						filter.FirstFilter = true;
+					if (filter.FirstFilter == false)
 					{
-						ViewData["Error"] = "Gelieve zowel een bedrijfsnaam als een start datum in te vullen bij uw eerste selectie.";
-						return View("Index");
-					}
-					_homesFiltered = _homeRepository.InitialFilter(filter);
-					filter.FirstFilter = true;
-					//Bijhouden van de filter
-					HttpContext.Session.SetObject<Home>("filter", filter);
+						filter.CheckAndSetLastMonth();
+						if (filter.InvoicCenterOrganization == null | (filter.SupportCallOpenDate == null && filter.LastMonth == false))
+						{
+							ViewData["Error"] = "Gelieve zowel een bedrijfsnaam als een start datum in te vullen bij uw eerste selectie.";
+							return View("Index", _home);
+						}
+						else if (DateTime.Parse(filter.SupportCallOpenDate) < DateTime.Today.AddYears(-1))
+						{
+							ViewData["Error"] = "Gelieve een datum te selecteren die minder dan een jaar geleden is.";
+							return View("Index", _home);
+						}
+						_homesFiltered = _homeRepository.InitialFilter(filter);
+						filter.FirstFilter = true;
+						//Bijhouden van de filter
+						HttpContext.Session.SetObject<Home>("filter", filter);
 
-					// Bijhouden van gefilterde Home objecten
-					HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
-					
-				}
-				else
-				{
-					#region toepassen filter en controle filter
+						// Bijhouden van gefilterde Home objecten
+						HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
+
+						graphsView = new GraphsViewModel(_homeRepository, _homesFiltered, filter);
+						if (_homesFiltered.Count() > 0)
+						{
+							graphsView.filterAsString = GetCorrectFilterString(_viewModel, graphsView, filter.ToString());
+							HttpContext.Session.SetObject<GraphsViewModel>("graphsView", graphsView);
+							return View(graphsView);
+						}
+						else
+						{
+							filter.FirstFilter = false;
+							HttpContext.Session.SetObject<Home>("filter", filter);
+						}
+					}
+
 					// Het filteren van de data adhv de meegeven filter.
+					//_homesFiltered = _homeRepository.Filter(filter);
 					List<List<string>> setProps = this.GetSetPropertiesAsString(filter);
-					_homesFiltered = _homeRepository.getFiltered(setProps[0].ToArray(), setProps[1],_homesFiltered);
-					// Het opslaan van de filter zodanig dit kan weergegeven worden boven de data. Dit moet na het filteren,
-					//dit omdat anders de data als "laatste maand" geselecteerd werd nog niet correct zijn.
-					chosenFilter = filter.ToString();
-					// Het doorgeven van de gekozen filter als string aan de view via een ViewBag (zodat dit kan weergegeven worden)
-					ViewBag.filter = chosenFilter;
-					//Bijhouden van de filter
-					HttpContext.Session.SetObject<Home>("filter", filter);
-					// Bijhouden van gefilterde Home objecten
-					HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
+					_homesFiltered = _homeRepository.getFiltered(setProps[0].ToArray(), setProps[1], _homesFiltered);
+
+
+					if (_homesFiltered.Count() > 0)
+					{
+
+						//Bijhouden van de filter
+						HttpContext.Session.SetObject<Home>("filter", filter);
+
+						// Bijhouden van gefilterde Home objecten
+						HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
+						// Aanmaken nieuw viewmodel
+						graphsView = new GraphsViewModel(_homeRepository, _homesFiltered, filter);
+						HttpContext.Session.SetObject<GraphsViewModel>("graphsview", graphsView);
+					}
+				}
+				// Controleren of er al een viewModel bestaat, indien dit niet zo is maken we een nieuw aan gebaseeerd op de gefilterde data.
+				if (graphsView == null)
+				{
+					filter = HttpContext.Session.GetObjectSingle<Home>("filter");
+					graphsView = new GraphsViewModel(_homeRepository, _homesFiltered, filter);
+					HttpContext.Session.SetObject<GraphsViewModel>("graphsView", graphsView);
+				}
+				//Kijken of de search resultaten opgaf en een gepaste reactie geven indien dit niet het geval was.
+				if (CheckInput(filter))
+				{
+					_filter = HttpContext.Session.GetObjectSingle<Home>("filter");
+					if (_filter == null)
+					{
+						_filter = new Home();
+					}
+					return View("Index", _filter);
 				}
 			}
-			// Als er geen filter is meegegeven dan kijken we of er eentje in de session zit
+			catch (Exception e)
+			{
+				ViewData["Error"] = "Er werden geen resultaten gevonden voor deze filter." + e.Message;
+				RedirectToActionPermanent("Index");
+			}
+			if (graphsView == null)
+				graphsView = new GraphsViewModel(_homeRepository, _EmptyEnumerable, _home);
+			_home = HttpContext.Session.GetObjectSingle<Home>("filter");
+			if (filter == null && _home == null)
+			{
+				tempString = "";
+			}
+			else if (filter == null && _home != null)
+			{
+				tempString = _home.ToString();
+			}
 			else
 			{
-				_filter = HttpContext.Session.GetObjectSingle<Home>("filter"); ;
-				ViewBag.filter = _filter;
-				_homesFiltered = HttpContext.Session.GetObject<IEnumerable<Home>>("_homesFiltered");
-			}// Als er geen filter in de session zat dan tonen we terug de index pagina met een melding
-			if (CheckInput(_filter))
-			{
-				_possibleChoices = (Dictionary<string, List<object>>)HttpContext.Session.GetObjectDict<Dictionary<string, List<object>>>("_possibleChoices");
-
-				ViewData["Selections"] = _possibleChoices;
-				return View("Index");
+				tempString = filter.ToString();
 			}
-			#endregion
-			// Het aanmaken van een ViewModel nu we zeker zijn dat  _filter niet null is.
-			if (graphsView.isNullObject())
-				try
-				{
-					graphsView = new GraphsViewModel(_homeRepository, _homesFiltered, _filter);
-				}
-				catch (Exception e)
-				{
-					ViewData["Selections"] = _possibleChoices;
-					ViewData["Error"] = "Er ging iets mis, mogelijks is uw sessie verlopen" + e.Message;
-					this.Index();
-				}
-			HttpContext.Session.SetObject<GraphsViewModel>("graphsViewModel", graphsView);
-			// doorgeven ViewModel aan de View
+			graphsView.filterAsString = GetCorrectFilterString(_viewModel, graphsView, tempString);
+			HttpContext.Session.SetObject<GraphsViewModel>("graphsView", graphsView);
 			return View(graphsView);
 		}
 		#endregion
@@ -320,8 +383,10 @@ namespace TrustTeamVersion4.Controllers
 			_homesFiltered = _EmptyEnumerable;
 			HttpContext.Session.SetObject<IEnumerable<Home>>("_homesFiltered", _homesFiltered);
 			HttpContext.Session.SetObject<Home>("filter", _home);
+			HttpContext.Session.SetObject<TableViewModel>("_viewModel", new TableViewModel());
+			HttpContext.Session.SetObject<GraphsViewModel>("graphsView", new GraphsViewModel());
 			ViewData["Selections"] = _possibleChoices;
-			return View("Index",_home);
+			return View("Index", _home);
 
 		}
 
@@ -396,6 +461,44 @@ namespace TrustTeamVersion4.Controllers
 		}
 		#endregion
 		#region methods
+
+		public string GetCorrectFilterString(TableViewModel table, GraphsViewModel graph, string filter)
+		{
+			if (table == null)
+				table = new TableViewModel();
+			if (graph == null)
+				graph = new GraphsViewModel();
+			string result = "";
+			string tableString = table.FilterString == null ? "" : table.FilterString;
+			string graphString = graph.filterAsString == null ? "" : graph.filterAsString;
+			string filterString = filter == null ? "" : filter;
+			
+			if (((tableString.Equals(filterString)) != (graphString.Equals(filterString))))
+			{
+				if (tableString.Equals(filterString))
+				{ result = graphString + " " + filterString; }
+				else if (graphString.Equals(filterString))
+				{ result = tableString + " " + filterString; }
+			}
+			else if((!(tableString.Contains(filterString)) && !(graphString.Contains(filterString))))
+			{
+				if (tableString.Count() > graphString.Count())
+					result = result + tableString + " " + filterString;
+				else if (graphString.Count() > tableString.Count())
+					result = result + graphString + " " + filterString;
+				else
+					result = result + tableString + " " + filterString; //beide zijn even lang en bevatten F nog niet
+			}
+			else if (tableString.Count() > graphString.Count())
+				result = tableString;
+			else if (graphString.Count() > tableString.Count())
+				result = graphString;
+			else
+				result = tableString; // table en graph bevatten zelfde waarde
+			return result.Trim();
+
+
+		}
 		// Geeft de ingestelde properties van een object terug als string value. Dit in combinatie met de naam van de property ook als string
 		public List<List<string>> GetSetPropertiesAsString(Home home)
 		{
@@ -507,7 +610,7 @@ namespace TrustTeamVersion4.Controllers
 			// Als de sessie verlopen is en de gebruiker wenst een pdf bekijken dan wordt een nullpointer gegeven, vandaar de error catching
 			try
 			{// Ophalen nodige data uit Sessie en de bool PdfFormat op true plaatsen zodanig bepaalde zaken weg gelaten worden in de pdf (header,footer,...)
-				graphsView = HttpContext.Session.GetObjectSingle<GraphsViewModel>("graphsViewModel");
+				graphsView = HttpContext.Session.GetObjectSingle<GraphsViewModel>("graphsView");
 				graphsView.PdfFormat = true;
 			}
 			catch (Exception e)
